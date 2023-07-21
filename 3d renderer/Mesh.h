@@ -23,7 +23,7 @@ struct Vertex {
 };
 
 struct Texture {
-    unsigned int id;
+    GLuint id;
     string type;
     string path;
 };
@@ -34,7 +34,7 @@ public:
     vector<Vertex>       vertices;
     vector<GLuint> indices;
     vector<Texture>      textures;
-    unsigned int VAO;
+    GLuint VAO;
 
     // constructor
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
@@ -43,7 +43,6 @@ public:
         this->indices = indices;
         this->textures = textures;
 
-        // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
     }
 
@@ -87,7 +86,7 @@ public:
 
 private:
     // render data 
-    unsigned int VBO, EBO;
+    GLuint VBO, EBO;
 
     // initializes all the buffer objects/arrays
     void setupMesh()

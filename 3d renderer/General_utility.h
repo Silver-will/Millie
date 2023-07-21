@@ -1,5 +1,5 @@
-#ifndef GENERAL_UTILITY
-#define GENERAL_UTILITY
+#ifndef GENERAL_UTILITY_H
+#define GENERAL_UTILITY_H
 #include<GLAD/glad.h>
 #include<GLFW/glfw3.h>
 #include<string>

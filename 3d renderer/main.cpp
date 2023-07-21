@@ -1,6 +1,4 @@
-#include"imgui/imgui.h"
-#include"imgui/imgui_impl_glfw.h"
-#include"imgui/imgui_impl_opengl3.h"
+#include"UI.h"
 #include<GLAD/glad.h>
 #include<GLFW/glfw3.h>
 #include<glm/glm.hpp>
@@ -21,7 +19,6 @@ void ScreenSpaceToWorldSpace(GLdouble xpos, GLdouble ypos, GLint width, GLint he
 
 //calculate change in mouse position and store in global namespace
 void ProcessOffset(GLfloat xpos, GLfloat ypos);
-
 void Input(GLFWwindow* window);
 
 const int WIDTH = 1024;
@@ -29,7 +26,6 @@ const int HEIGHT = 720;
 Camera cam;
 glm::mat4 projection = glm::mat4(1.0f);
 Ray rayWor;
-
 int main()
 {
 	glfwInit();
