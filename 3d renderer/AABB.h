@@ -1,5 +1,5 @@
-#ifndef AABB_
-#define AABB_
+#ifndef AABB_H
+#define AABB_H
 #include<glm/glm.hpp>
 #include"General_utility.h"
 struct AABB 

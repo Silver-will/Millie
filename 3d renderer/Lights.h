@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIGHTS_H
+#define LIGHTS_H
 #include<glm/glm.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<string>
@@ -14,4 +15,4 @@ struct PointLight
 private:
 	void UpdateVecs(Shader& s);
 };
-
+#endif
