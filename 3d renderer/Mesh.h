@@ -28,8 +28,7 @@ struct Texture {
     string path;
 };
 
-class Mesh {
-public:
+struct Mesh {
     // mesh Data
     vector<Vertex>       vertices;
     vector<GLuint> indices;

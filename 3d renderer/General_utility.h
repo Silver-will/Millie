@@ -22,6 +22,6 @@ namespace Glob{
 	extern bool fMouse;
 }
 
-enum Current_State{camera_active = 0, object_active};
+enum active_shading_model{none = 0, blinnPhong, PBR};
 
 #endif

@@ -1,3 +1,4 @@
+/*
 #include"model.h"
 #include<iostream>
 
@@ -187,3 +188,5 @@ GLuint LoadTexture(const char* file, const string& directory)
     }
     return texture;
 }
+
+*/
