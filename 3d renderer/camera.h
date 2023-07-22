@@ -5,7 +5,6 @@
 #include<glm/glm.hpp>
 struct Camera
 {
-public:
 	Camera();
 	void processInput(GLFWwindow* window);
 	void updateCameraVector();
