@@ -16,6 +16,9 @@
     <Filter Include="imgui">
       <UniqueIdentifier>{11a78926-e60a-4e9e-b95c-21f6720703f1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{be5567c7-0575-4b96-a9ad-cd383c07744e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AABB.cpp">
@@ -119,9 +122,36 @@
     <ClInclude Include="UI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="imgui\imgui_impl_opengl3_loader.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Model.vs" />
-    <None Include="Shaders\Model.fs" />
+    <None Include="Shaders\blinn-phong.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\blinn-phong.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="none.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="none.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="pbr.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="pbr.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="imgui\imgui.natstepfilter">
+      <Filter>imgui</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="imgui\imgui.natvis">
+      <Filter>imgui</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

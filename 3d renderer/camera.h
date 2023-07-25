@@ -7,9 +7,12 @@ struct Camera
 {
 	Camera();
 	void processInput(GLFWwindow* window);
+	void setTarget(glm::vec3 direction);
 	void updateCameraVector();
 	glm::mat4 getView();
 	glm::vec3 getPos();
+	glm::vec3 getTarget();
+
 private:
 	glm::vec3 upValue;
 	glm::vec3 cameraPos;

@@ -9,10 +9,12 @@
 #include"camera.h"
 #include"model.h"
 #include"Ray.h"
+#include"Lights.h"
 
 //handles windows resize
 void FramebufferCallback(GLFWwindow* window, GLint width, GLint height);
 void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
+void blank(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
 
 //Ray casting algorithm projecting a ray from the mouse in world co-ordinates
 void ScreenSpaceToWorldSpace(GLdouble xpos, GLdouble ypos, GLint width, GLint height);
@@ -20,6 +22,7 @@ void ScreenSpaceToWorldSpace(GLdouble xpos, GLdouble ypos, GLint width, GLint he
 //calculate change in mouse position and store in global namespace
 void ProcessOffset(GLfloat xpos, GLfloat ypos);
 void Input(GLFWwindow* window);
+void UpdatePhong(Shader& shad);
 
 const int WIDTH = 1024;
 const int HEIGHT = 720;
@@ -48,41 +51,58 @@ int main()
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
+	bool showWindow = true;
+
+	PointLight P(vec3(0.15), vec3(0.4), vec3(0.5), vec3(0.5f, 0.5f, 0.5f));
+	Light_values::points.push_back(P);
+	Light_values::spots.push_back(SpotLight());
 
 	glfwSetFramebufferSizeCallback(window, FramebufferCallback);
+		
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+
 	glEnable(GL_DEPTH_TEST);
 	stbi_set_flip_vertically_on_load(true);
 
-	Shader modelShader("./Shaders/Model.vs", "./Shaders/Model.fs");
-	Model oModel("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\backpack\\backpack.obj");
+	Shader modelShader("./Shaders/blinn-phong.vs", "./Shaders/blinn-phong.fs");
+	Model oModel("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
+	glm::mat3 Normalmat(1.0f);
+	glm::mat4 hold(1.0f);
+	glm::mat4 model(1.0f);
+	model = glm::translate(model, glm::vec3(0.0f, -1.0f, -2.0f));
+	model = glm::scale(model, glm::vec3(0.4f));
+	
+	hold = glm::transpose(glm::inverse(model));
+	Normalmat = glm::make_mat3(&hold[0][0]);
 
 	while (!glfwWindowShouldClose(window))
 	{
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-		ImGui::ShowDemoWindow();
+		
 		Input(window);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+
 		modelShader.use();
 		projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 		modelShader.SetMatrix4("proj", projection);
+		modelShader.SetVector3f("viewPos", cam.getPos());
 		glm::mat4 view(1.0f);
 		view = cam.getView();
 		modelShader.SetMatrix4("view", view);
-		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.0f));
-		model = glm::scale(model, glm::vec3(0.5f));
-		GLfloat theta = static_cast<GLfloat>(glfwGetTime());
-		model = glm::rotate(model, theta, glm::vec3(cos(theta), sin(theta), 0.0f));
+		modelShader.SetMatrix3("normalMatrix", Normalmat);
+		
+		
 		modelShader.SetMatrix4("model", model);
+
+		UpdatePhong(modelShader);
+		SetupUI(&showWindow);
 		oModel.Draw(modelShader);
 
 		ImGui::Render();
@@ -128,6 +148,9 @@ void ScreenSpaceToWorldSpace(GLdouble xpos, GLdouble ypos, GLint width, GLint he
 
 void ProcessOffset(GLfloat xpos, GLfloat ypos)
 {
+	static GLfloat yaw = -90.0f;
+	static GLfloat pitch = 0.0f;
+	static GLfloat sensitivity = 0.1f;
 	if (Glob::fMouse)
 	{
 		Glob::fMouse = false;
@@ -137,15 +160,64 @@ void ProcessOffset(GLfloat xpos, GLfloat ypos)
 	else
 	{
 		Glob::xOffset = xpos - Glob::lastX;
-		Glob::yOffset = ypos - Glob::lastY;
+		Glob::yOffset = Glob::lastY - ypos;
 		Glob::lastX = xpos;
 		Glob::lastY = ypos;
 	}
+	
+	Glob::xOffset *= sensitivity;
+	Glob::yOffset *= sensitivity;
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+	yaw += Glob::xOffset;
+	pitch += Glob::yOffset;
+
+	static glm::vec3 direction;
+
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cam.setTarget(glm::normalize(direction));
 }
 
 void Input(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS)
+	{
+		glfwSetCursorPosCallback(window, MouseCallback);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+	{
+		glfwSetCursorPosCallback(window, NULL);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
 	cam.processInput(window);
+}
+
+void UpdatePhong(Shader& shad)
+{
+	for (size_t i = 0; i < Light_values::points.size(); i++)
+	{
+		Light_values::points[i].UpdateVecs(shad, i);
+	}
+	for (size_t i = 0; i < Light_values::spots.size(); i++)
+	{
+		Light_values::points[i].UpdateVecs(shad, i);
+	}
+	Light_values::direct.UpdateVecs(shad);
+	shad.SetFloat("material.shininess", Light_values::shine);
+	/*
+	shad.SetInteger("point_count", Light_values::points.size());
+	shad.SetInteger("spot_count", Light_values::spots.size());
+	*/
+}
+
+void blank(GLFWwindow* window, GLdouble xpos, GLdouble ypos)
+{
+
 }

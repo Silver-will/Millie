@@ -161,6 +161,7 @@
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_glfw.h" />
     <ClInclude Include="imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="imgui\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="imgui\imgui_internal.h" />
     <ClInclude Include="Lights.h" />
     <ClInclude Include="Mesh.h" />
@@ -170,8 +171,16 @@
     <ClInclude Include="UI.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Model.fs" />
-    <None Include="Shaders\Model.vs" />
+    <None Include="imgui\imgui.natstepfilter" />
+    <None Include="none.fs" />
+    <None Include="none.vs" />
+    <None Include="pbr.fs" />
+    <None Include="pbr.vs" />
+    <None Include="Shaders\blinn-phong.fs" />
+    <None Include="Shaders\blinn-phong.vs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="imgui\imgui.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

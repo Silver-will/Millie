@@ -18,6 +18,7 @@ struct Shader {
     void    SetVector4f(string name, float x, float y, float z, float w, bool useShader = false);
     void    SetVector4f(string name, const glm::vec4& value, bool useShader = false);
     void    SetMatrix4(string name, const glm::mat4& matrix, bool useShader = false);
+    void    SetMatrix3(string name, const glm::mat3& matrix, bool useShader = false);
 
 	GLuint shad;
 	~Shader();
