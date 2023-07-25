@@ -7,7 +7,7 @@ namespace Glob
 	GLfloat sensitivity = 0.05f;
 	bool fMouse = true;
 	GLfloat lastX{}, lastY{}, xOffset{}, yOffset{};
-	active_shading_model active{none};
+	active_shading_model active{active_shading_model::none};
 }
 void Log(const string message, const std::source_location loc)
 {

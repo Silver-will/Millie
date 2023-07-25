@@ -42,16 +42,28 @@ void Camera::processInput(GLFWwindow* window)
 
 void Camera::updateCameraVector()
 {
-	
+	this->view = glm::lookAt(cameraPos, cameraPos + cameraTarget, upValue);
+	this->Right = glm::cross(cameraTarget, glm::vec3(0.0f,1.0f,0.0f));
+	this->upValue = glm::cross(Right, cameraTarget);
 }
 
+void Camera::setTarget(glm::vec3 direction)
+{
+	this->cameraTarget = direction;
+	updateCameraVector();
+}
 glm::mat4 Camera::getView()
 {
-	view = glm::lookAt(cameraPos, cameraPos + cameraTarget, upValue);
-	return view;
+	updateCameraVector();
+	return this->view;
 }
 
 glm::vec3 Camera::getPos()
 {
 	return this->cameraPos;
+}
+
+glm::vec3 Camera::getTarget()
+{
+	return this->cameraTarget;
 }

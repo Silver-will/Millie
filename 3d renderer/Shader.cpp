@@ -6,15 +6,15 @@ using namespace std;
 
 string loadFromFile(string_view shader)
 {
-    fstream shad;
+    fstream shade;
     string code;
-    shad.exceptions(std::fstream::failbit | std::fstream::badbit);
+    shade.exceptions(std::fstream::failbit | std::fstream::badbit);
     try {
-        shad.open(shader);
+        shade.open(shader);
         stringstream hold;
-        hold << shad.rdbuf();
+        hold << shade.rdbuf();
         code = hold.str();
-        shad.close();
+        shade.close();
     }
     catch (exception& e)
     {
@@ -131,6 +131,13 @@ void Shader::SetMatrix4(string name, const glm::mat4& matrix, bool useShader)
     if (useShader)
         this->use();
     glUniformMatrix4fv(glGetUniformLocation(this->shad, name.c_str()), 1, false, glm::value_ptr(matrix));
+}
+
+void Shader::SetMatrix3(string name, const glm::mat3& matrix, bool useShader)
+{
+    if (useShader)
+        this->use();
+    glUniformMatrix3fv(glGetUniformLocation(this->shad, name.c_str()), 1, false, glm::value_ptr(matrix));
 }
 
 void Shader::use()

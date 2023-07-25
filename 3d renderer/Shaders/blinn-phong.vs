@@ -9,19 +9,17 @@ out VS_OUT
 {
 	vec2 Tex;
 	vec3 Norm;
-	vec3 FragPos
+	vec3 FragPos;
 } vs_out;
-
 
 uniform mat4 proj;
 uniform mat4 view;
-
 uniform mat4 model;
 
 void main()
 {
-	FragPos = vec3 (model * vec4(pos,1.0)); 
+	vs_out.FragPos = vec3 (model * vec4(pos ,1.0)); 
 	vs_out.Norm = aNorm;
 	vs_out.Tex = aTex;
-	gl_Position = proj * view * model * vec4(pos,1.0);
+	gl_Position = proj * view * model * vec4(pos, 1.0);
 }
