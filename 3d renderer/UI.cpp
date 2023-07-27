@@ -179,7 +179,7 @@ void SetupUI(bool* p_open)
             direct.direction = vec3(pos[0], pos[1], pos[2]);
             ImGui::SeparatorText("ambient");
 
-            static std::vector<GLfloat> amb{ 0.05f,0.05f,0.05f };
+            static std::vector<GLfloat> amb{ 0.2f,0.2f,0.2f };
             ImGui::InputFloat3("R,G,B amb", amb.data());
             direct.diffuse = vec3(amb.at(0), amb.at(1), amb.at(2));
             
@@ -190,7 +190,7 @@ void SetupUI(bool* p_open)
             direct.diffuse = vec3(diff.at(0), diff.at(1), diff.at(2));
 
             ImGui::SeparatorText("specular");
-            static std::vector<GLfloat> spec{0.4f,0.4f,0.4f};
+            static std::vector<GLfloat> spec{1.0f,1.0f,1.0f};
             ImGui::InputFloat3("R,G,B spec", spec.data());
             direct.specular = vec3(spec.at(0), spec.at(1), spec.at(2));
             ImGui::TreePop();

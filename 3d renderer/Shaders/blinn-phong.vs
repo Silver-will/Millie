@@ -2,8 +2,6 @@
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec3 aNorm;
 layout (location = 2) in vec2 aTex;
-layout (location = 3) in vec3 aTan;
-layout (location = 4) in vec3 aBiTan;
 
 out VS_OUT
 {
@@ -15,11 +13,12 @@ out VS_OUT
 uniform mat4 proj;
 uniform mat4 view;
 uniform mat4 model;
+uniform mat3 normalMatrix;
 
 void main()
 {
-	vs_out.FragPos = vec3 (model * vec4(pos ,1.0)); 
-	vs_out.Norm = aNorm;
+	vs_out.FragPos = vec3 (model * vec4(pos ,1.0));
+	vs_out.Norm = normalMatrix * aNorm;
 	vs_out.Tex = aTex;
-	gl_Position = proj * view * model * vec4(pos, 1.0);
+	gl_Position = proj * view * vec4(vs_out.FragPos, 1.0);
 }

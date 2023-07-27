@@ -152,6 +152,7 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Shaders\def.cpp" />
     <ClCompile Include="UI.cpp" />
+    <ClCompile Include="VAO.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h" />
@@ -169,6 +170,7 @@
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="UI.h" />
+    <ClInclude Include="VAO.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="imgui\imgui.natstepfilter" />

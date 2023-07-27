@@ -32,8 +32,7 @@ void Mesh::Draw(Shader& shader)
         
         name = "material." + name + number;
         const char* fs = name.c_str();
-
-        //glUniform1i(glGetUniformLocation(shader.shad, fs), i);
+        glUniform1i(glGetUniformLocation(shader.shad, fs), i);
 
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
@@ -66,12 +65,6 @@ void Mesh::setupMesh()
 
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-  
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-    
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
     glBindVertexArray(0);
 }
