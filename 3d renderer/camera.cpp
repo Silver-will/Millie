@@ -43,8 +43,8 @@ void Camera::processInput(GLFWwindow* window)
 void Camera::updateCameraVector()
 {
 	this->view = glm::lookAt(cameraPos, cameraPos + cameraTarget, upValue);
-	this->Right = glm::cross(cameraTarget, glm::vec3(0.0f,1.0f,0.0f));
-	this->upValue = glm::cross(Right, cameraTarget);
+	this->Right = glm::normalize(glm::cross(cameraTarget, glm::vec3(0.0f,1.0f,0.0f)));
+	this->upValue = glm::normalize(glm::cross(Right, cameraTarget));
 }
 
 void Camera::setTarget(glm::vec3 direction)

@@ -21,7 +21,7 @@
 #include <vector>
 using namespace std;
 
-unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false);
+unsigned int TextureFromFile(const char* name, const string& directory, bool gamma = false);
 
 struct Model
 {
@@ -117,16 +117,7 @@ private:
                 vec.x = mesh->mTextureCoords[0][i].x;
                 vec.y = mesh->mTextureCoords[0][i].y;
                 vertex.TexCoords = vec;
-                // tangent
-                vector.x = mesh->mTangents[i].x;
-                vector.y = mesh->mTangents[i].y;
-                vector.z = mesh->mTangents[i].z;
-                vertex.Tangent = vector;
-                // bitangent
-                vector.x = mesh->mBitangents[i].x;
-                vector.y = mesh->mBitangents[i].y;
-                vector.z = mesh->mBitangents[i].z;
-                vertex.Bitangent = vector;
+                
             }
             else
                 vertex.TexCoords = glm::vec2(0.0f, 0.0f);
@@ -202,15 +193,14 @@ private:
 };
 
 
-unsigned int TextureFromFile(const char* path, const string& directory, bool gamma)
+unsigned int TextureFromFile(const char* name, const string& directory, bool gamma)
 {
-    string filename = string(path);
+    string filename = string(name);
     filename = directory + '\\' + filename;
-
-    unsigned int textureID;
+    GLuint textureID;
     glGenTextures(1, &textureID);
 
-    int width, height, nrComponents;
+    GLint width, height, nrComponents;
     unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
     if (data)
     {

@@ -36,6 +36,7 @@ void PointLight::UpdateVecs(Shader& s, size_t ind)
 	s.SetFloat(p + n + "].constant", constant);
 	s.SetFloat(p + n + "].linear", linear);
 	s.SetFloat(p + n + "].quadratic", quadratic);
+	s.SetInteger("point_count", Light_values::points.size());
 }
 
 SpotLight::SpotLight(vec3& amb, vec3& diff, vec3& spec, vec3& dir, vec3& pos, GLfloat cut,
@@ -81,6 +82,8 @@ void SpotLight::UpdateVecs(Shader& s, size_t ind)
 
 	s.SetFloat(p + n + "].cutOff", cutOff);
 	s.SetFloat(p + n + "].outerCutOff", OuterCutoff);
+	
+	s.SetInteger("spot_count", Light_values::spots.size());
 }
 
 DirLight::DirLight(vec3 amb, vec3 diff, vec3 spec, vec3 dir)
@@ -100,8 +103,8 @@ void DirLight::UpdateVecs(Shader& s)
 
 namespace Light_values
 {
-	DirLight direct(vec3(0.05f), vec3(0.3f), vec3(0.4f), vec3(0.0f, -1.0f, -0.5f));
+	DirLight direct(vec3(0.2f), vec3(0.3f), vec3(1.0f), vec3(0.0f, -1.0f, -0.5f));
 	std::vector<SpotLight> spots{};
 	std::vector<PointLight> points{};
-	GLfloat shine{ 0.05f };
+	GLfloat shine{ 32.0f};
 }
