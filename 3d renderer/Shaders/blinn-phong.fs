@@ -57,7 +57,7 @@ struct SpotLight
 #define MAX_POINT_LIGHT 50
 #define MAX_SPOT_LIGHT 50
 
-//uniform PointLight points[MAX_POINT_LIGHT];
+uniform PointLight points[MAX_POINT_LIGHT];
 uniform DirectLight direct;
 uniform SpotLight spots[MAX_SPOT_LIGHT];
 uniform Material material;
@@ -67,7 +67,7 @@ uniform vec3 viewPos;
 out vec4 fragColor;
 
 vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir);
-vec3 CalculateSpot(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir);
 void main()
 {
@@ -78,10 +78,10 @@ void main()
     {
       Output += CalculatePoints(points[i], norm, fs_in.FragPos, viewDir);
     }
-    //for(int i = 0; i < spot_count; i++)
-    //{
-      //  Output += CalculateSpot(spots[i], norm, fs_in.FragPos, viewDir);
-    //}
+    for(int i = 0; i < spot_count; i++)
+    {
+      Output += CalculateSpots(spots[i], norm, fs_in.FragPos, viewDir);
+    }
     fragColor = vec4(Output, 1.0f);
 }
 
@@ -126,12 +126,12 @@ vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir)
     return (ambient + diffuse + specular);
 }
 
-vec3 CalculateSpot(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
     vec3 lightDir = normalize(fragPos - light.position);
 
     float diff = max(dot(lightDir, normal), 0.0);
-    vec3 reflectDir = reflect(-lightDir, normal);
+    vec3 reflectDir = normalize(reflect(-lightDir, normal));
     
     float spec = pow(max(dot(reflectDir, viewDir), 0.0), material.shininess);
     float distance = length(light.position - fragPos);
@@ -145,12 +145,10 @@ vec3 CalculateSpot(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float epilson = (light.cutoff - light.outerCutoff);
     float intensity = clamp((theta - light.outerCutoff) / epilson, 0.0, 1.0);
 
-    diffuse *= intensity;
-    specular *= intensity;
-
-    ambient *= attenuation;
-    diffuse *= attenuation;
-    specular *= attenuation;
+    diffuse *= intensity * attenuation;
+    specular *= intensity * attenuation;
+    ambient *= attenuation * attenuation;
+    
     
     return (ambient + diffuse + specular);
 }

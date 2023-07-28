@@ -12,6 +12,7 @@ struct Camera
 	glm::mat4 getView();
 	glm::vec3 getPos();
 	glm::vec3 getTarget();
+	glm::vec3 getDir();
 
 private:
 	glm::vec3 upValue;

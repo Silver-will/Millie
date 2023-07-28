@@ -1,4 +1,5 @@
 #include "Lights.h"
+#include<iostream>
 PointLight::PointLight(vec3 amb, vec3 diff, vec3 spec, vec3 pos,
 	 GLfloat con, GLfloat line, GLfloat quad)
 		:ambient{ amb }, diffuse{ diff }, specular{ spec }, position{ pos }, constant{ con },
@@ -39,7 +40,7 @@ void PointLight::UpdateVecs(Shader& s, size_t ind)
 	s.SetInteger("point_count", Light_values::points.size());
 }
 
-SpotLight::SpotLight(vec3& amb, vec3& diff, vec3& spec, vec3& dir, vec3& pos, GLfloat cut,
+SpotLight::SpotLight(vec3 amb, vec3 diff, vec3 spec, vec3 dir, vec3 pos, GLfloat cut,
 	GLfloat out, GLfloat con, GLfloat line, GLfloat quad)
 	:ambient{ amb }, diffuse{ diff }, specular{ spec }, direction{ dir }, position {pos}, 
 		cutOff{ cut }, OuterCutoff{ out }, quadratic{quad}, constant{con},linear{line}
@@ -72,6 +73,7 @@ void SpotLight::UpdateVecs(Shader& s, size_t ind)
 	string n = std::to_string(ind);
 	string p = "spots[";
 	s.SetVector3f(p + n + "].position", position);
+	s.SetVector3f(p + n + "].direction", direction);
 	s.SetVector3f(p + n + "].ambient", ambient);
 	s.SetVector3f(p + n + "].diffuse", diffuse);
 	s.SetVector3f(p + n + "].specular", specular);

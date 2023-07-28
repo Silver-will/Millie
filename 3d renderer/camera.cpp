@@ -67,3 +67,8 @@ glm::vec3 Camera::getTarget()
 {
 	return this->cameraTarget;
 }
+
+glm::vec3 Camera::getDir()
+{
+	return this->cameraTarget;
+}
