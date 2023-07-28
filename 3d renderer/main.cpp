@@ -13,9 +13,9 @@
 #include"VAO.h"
 
 //handles windows resize
+GLuint loadCubeMapTexture(string directory);
 void FramebufferCallback(GLFWwindow* window, GLint width, GLint height);
 void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
-void blank(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
 void setLight();
 
 //Ray casting algorithm projecting a ray from the mouse in world co-ordinates
@@ -66,9 +66,10 @@ int main()
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	stbi_set_flip_vertically_on_load(true);
+	//stbi_set_flip_vertically_on_load(true);
 
 	Shader modelShader("./Shaders/blinn-phong.vs", "./Shaders/blinn-phong.fs");
+	Shader skyboxShader("./Shaders/cubeMap.vs", "./Shaders/cubeMap.fs");
 	Model oModel("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
 	std::vector<GLfloat> vertices = {
 		// positions          // normals           // texture coords
@@ -115,14 +116,62 @@ int main()
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
 	};
 
+	std::vector<GLfloat> skyBox{
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f
+	};
 	std::vector<GLint> offset{ 3,3,2 };
 	/*VAO vao;
 	vao.GenerateBuffer("VERTEX", vertices, offset);
 	vao.unbind();
 	*/
 
+	std::vector<GLint> skyOffset{ 3 };
+	VAO skyvao;
+	skyvao.GenerateBuffer("VERTEX", skyBox, skyOffset);
+	skyvao.unbind();
+
 	glm::mat4 model(1.0f);
-	model = glm::translate(model, glm::vec3(0.0f, -1.0f, -2.0f));
+	model = glm::translate(model, glm::vec3(0.0f, -0.5f, -2.0f));
 	model = glm::scale(model, glm::vec3(0.5f));
 	//GLuint diffuse = TextureFromFile("container2.png", "C:\\Users\\katsura\\Documents\\PROGRAMMING\\LearnOpenGL\\resources\\textures");
 	//GLuint specular = TextureFromFile("container2_specular.png", "C:\\Users\\katsura\\Documents\\PROGRAMMING\\LearnOpenGL\\resources\\textures");
@@ -132,10 +181,9 @@ int main()
 	modelShader.SetInteger("material.texture_diffuse1", 0);
 	modelShader.SetInteger("material.texture_specular1", 1);
 	*/
-
-	PointLight P(vec3(0.15), vec3(0.4), vec3(0.5), vec3(0.5f, 0.5f, 0.5f));
-	Light_values::points.push_back(P);
-	Light_values::spots.push_back(SpotLight());
+	skyboxShader.use();
+	skyboxShader.SetInteger("skybox", 0);
+	setLight();
 	GLint width{}, height{};
 	while (!glfwWindowShouldClose(window))
 	{
@@ -276,17 +324,80 @@ void UpdatePhong(Shader& shad)
 	}
 	for (size_t i = 0; i < Light_values::spots.size(); i++)
 	{
-		Light_values::points[i].UpdateVecs(shad, i);
+		Light_values::spots[i].UpdateVecs(shad, i);
 	}
 	Light_values::direct.UpdateVecs(shad);
 	shad.SetFloat("material.shininess", Light_values::shine);
-	/*
-	shad.SetInteger("point_count", Light_values::points.size());
-	shad.SetInteger("spot_count", Light_values::spots.size());
-	*/
 }
 
 void setLight()
 {
+	std::vector<glm::vec3> pointPos{
+		glm::vec3(2.0f, 0.9f, -3.0f),
+		glm::vec3(-2.0f, 0.9f, -1.0f),
+		glm::vec3(0.0f, 0.9f, -2.0f)
+	};
+	for (auto& x : pointPos)
+	{
+		Light_values::points.push_back(PointLight(vec3(0.15), vec3(0.4), vec3(0.5), x, 1.0f, 0.22f, 0.2f));
+	}
+	std::vector<glm::vec3> spotPos
+	{
+		glm::vec3(0.0f, 0.0f, -3.0f),
+		glm::vec3(0.0f, -0.5f, -2.0f),
+		glm::vec3(2.0f, 0.0f, -3.0f),
+		glm::vec3(0.0f, -0.5f, -2.0f)
+	};
 
+	for (size_t i = 0; i < spotPos.size(); i+=2)
+	{
+		Light_values::spots.push_back(SpotLight(vec3(0.0f), vec3(0.4), vec3(1.0), spotPos[i + 1], spotPos[i],
+			glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)), 1.0f, 0.22f, 0.2f));
+	}
+
+	std::cout << Light_values::points.size() << std::endl;
+	std::cout << "test\n";
+
+}
+
+GLuint loadCubeMapTexture(string directory)
+{
+	std::vector<string> faces{
+		"right.jpg",
+		"left.jpg",
+		"top.jpg",
+		"bottom.jpg"
+		"front.jpg",
+		"back.jpg",
+	};
+	GLuint ID;
+	glGenTextures(1, &ID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
+
+	GLint width, height, nrComponents;
+	
+	for (size_t i = 0; i < faces.size(); i++)
+	{
+		unsigned char* data = stbi_load((directory + faces[i]).c_str(), &width, &height, &nrComponents, 0);
+		GLenum imageFormat{};
+		if (data)
+		{
+			if (nrComponents == 1) imageFormat == GL_RED;
+			else if (nrComponents == 3) imageFormat == GL_RGB;
+			else imageFormat = GL_RGBA;
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, imageFormat, width, height, 0, imageFormat, GL_UNSIGNED_BYTE, data);
+			stbi_image_free(data);
+		}
+		else
+		{
+			Log("Failed to load cube map");
+		}
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return ID;
 }

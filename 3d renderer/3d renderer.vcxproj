@@ -133,10 +133,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\glad.c" />
     <ClCompile Include="AABB.cpp" />
     <ClCompile Include="camera.cpp" />
+    <ClCompile Include="def.cpp" />
     <ClCompile Include="General_utility.cpp" />
+    <ClCompile Include="glad.c" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -150,7 +151,6 @@
     <ClCompile Include="model.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="Shaders\def.cpp" />
     <ClCompile Include="UI.cpp" />
     <ClCompile Include="VAO.cpp" />
   </ItemGroup>
@@ -173,13 +173,15 @@
     <ClInclude Include="VAO.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cubeMap.vs" />
     <None Include="imgui\imgui.natstepfilter" />
-    <None Include="none.fs" />
-    <None Include="none.vs" />
-    <None Include="pbr.fs" />
-    <None Include="pbr.vs" />
     <None Include="Shaders\blinn-phong.fs" />
     <None Include="Shaders\blinn-phong.vs" />
+    <None Include="Shaders\cubeMap.fs" />
+    <None Include="Shaders\none.fs" />
+    <None Include="Shaders\none.vs" />
+    <None Include="Shaders\pbr.fs" />
+    <None Include="Shaders\pbr.vs" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\imgui.natvis" />

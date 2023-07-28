@@ -39,12 +39,6 @@
     <ClCompile Include="General_utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\glad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Shaders\def.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="imgui\imgui_impl_opengl3.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
@@ -79,6 +73,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VAO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="def.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -139,20 +139,26 @@
     <None Include="Shaders\blinn-phong.fs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="none.vs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="none.fs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="pbr.fs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="pbr.vs">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="imgui\imgui.natstepfilter">
       <Filter>imgui</Filter>
+    </None>
+    <None Include="cubeMap.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cubeMap.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\none.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\none.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\pbr.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\pbr.vs">
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

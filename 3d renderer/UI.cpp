@@ -6,7 +6,7 @@ using namespace std::literals::string_literals;
 using namespace Light_values;
 
 //directly read display and edit lighting values
-void setLights(vec3& lightValues, string name);
+void setLights(vec3& lightValues);
 
 void SetupUI(bool* p_open)
 {
@@ -66,49 +66,50 @@ void SetupUI(bool* p_open)
             for (size_t i = 0; i < points.size(); i++)
             {
                 index = std::to_string(i);
-                ImGui::SeparatorText(("Point "s + index).c_str());
+                if (ImGui::TreeNode(("Point "s + index).c_str()))
+                {
+                    if (ImGui::TreeNode("Positions"))
+                    {
+                        GLfloat pos[3] = { points[i].position.x, points[i].position.y, points[i].position.z };
+                        ImGui::InputFloat3("x,y,z", pos);
+                        points[i].position = vec3(pos[0], pos[1], pos[2]);
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode("ambient"))
+                    {
+                        //couldn't set a maximum and minimum value for InputFloat3() so this will have to do
+                        auto& amb = points[i].ambient;
+                        setLights(amb);
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode("diffuse"))
+                    {
+                        auto& diff = points[i].diffuse;
+                        setLights(diff);
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode("specular"))
+                    {
+                        auto& spec = points[i].specular;
+                        setLights(spec);
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode("attenuation"))
+                    {
+                        //move this declaration to a higher scope later
+                        ImGui::SliderFloat("Constant", &points[i].constant, 0.0f, 1.0f);
+                        ImGui::SliderFloat("Linear", &points[i].linear, 0.0f, 1.0f);
+                        ImGui::SliderFloat("quadratic", &points[i].quadratic, 0.0f, 2.0f );
+                        ImGui::TreePop();
+                        ImGui::Spacing();
 
-                if (ImGui::TreeNode("Positions"))
-                {
-                    static GLfloat pos[3] = { points[i].position.x, points[i].position.y, points[i].position.z };
-                    ImGui::InputFloat3("x,y,z", pos);
-                    points[i].position = vec3(pos[0], pos[1], pos[2]);
+                    }
                     ImGui::TreePop();
-                    ImGui::Spacing();
                 }
-                if (ImGui::TreeNode("ambient"))
-                {
-                    //couldn't set a maximum and minimum value for InputFloat3() so this will have to do
-                    static auto& amb = points[i].ambient;
-                    setLights(amb, "amb");
-                    ImGui::TreePop();
-                    ImGui::Spacing();
-                }
-                if (ImGui::TreeNode("diffuse"))
-                {
-                    static auto& diff = points[i].diffuse;
-                    setLights(diff, "diff");
-                    ImGui::TreePop();
-                    ImGui::Spacing();
-                }
-                if (ImGui::TreeNode("specular"))
-                {
-                    static auto& spec = points[i].specular;
-                    setLights(spec, "spec");
-                    ImGui::TreePop();
-                    ImGui::Spacing();
-                }
-                if (ImGui::TreeNode("attenuation"))
-                {
-                    //move this declaration to a higher scope later
-                    ImGui::SliderFloat("Constant", &points[i].constant, 0.0f, 1.0f, "&.05f");
-                    ImGui::SliderFloat("Linear", &points[i].linear, 0.0f, 1.0f, "&.05f");
-                    ImGui::SliderFloat("quadratic", &points[i].quadratic, 0.0f, 1.0f, "&.05f");
-                    ImGui::TreePop();
-                    ImGui::Spacing();
-                    
-                }
-
             }
             ImGui::TreePop();
         }
@@ -117,57 +118,58 @@ void SetupUI(bool* p_open)
             for (size_t i = 0; i < spots.size(); i++)
             {
                 index = std::to_string(i);
-                ImGui::SeparatorText(("Spots "s + index).c_str());
-
-                if (ImGui::TreeNode("Positions and Direction"))
+                if (ImGui::TreeNode(("Spots "s + index).c_str()))
                 {
-                    static float pos[6] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-                    ImGui::InputFloat3("pos", pos);
-                    ImGui::InputFloat3("dir", &pos[3]);
-                    spots[i].position = vec3(pos[0], pos[1], pos[2]);
-                    spots[i].direction = vec3(pos[3], pos[4], pos[5]);
+                    if (ImGui::TreeNode("Positions and Direction"))
+                    {
+                        GLfloat pos[6] = { spots[i].position.x, spots[i].position.y, spots[i].position.z, spots[i].direction.x,
+                            spots[i].direction.y, spots[i].direction.z };
+                            ImGui::InputFloat3("pos", pos);
+                            ImGui::InputFloat3("dir", &pos[3]);
+                            spots[i].position = glm::vec3(pos[0], pos[1], pos[2]);
+                            spots[i].direction = glm::vec3(pos[3], pos[4], pos[5]);
+                            ImGui::TreePop();
+                            ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode(("ambient"s + index).c_str()))
+                    {
+                        //couldn't set a maximum and minimum value for InputFloat3() so this will have to do
+                        auto& amb = spots[i].ambient;
+                        setLights(amb);
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode("diffuse"))
+                    {
+                        auto& diff = spots[i].diffuse;
+                        setLights(diff);
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode("specular"))
+                    {
+                        auto& spec = spots[i].specular;
+                        setLights(spec);
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode("attenuation"))
+                    {
+                        //move this declaration to a higher scope later
+                        ImGui::SliderFloat("Constant", &spots[i].constant, 0.0f, 1.0f, "&.05f");
+                        ImGui::SliderFloat("Linear", &spots[i].linear, 0.0f, 1.0f, "&.05f");
+                        ImGui::SliderFloat("quadratic", &spots[i].quadratic, 0.0f, 1.0f, "&.05f");
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
+                    if (ImGui::TreeNode("Cutoff"))
+                    {
+                        ImGui::SliderFloat("Cutoff", &spots[i].cutOff, 0.0f, 1.0f);
+                        ImGui::SliderFloat("outerCutoff", &spots[i].OuterCutoff, 0.0f, 1.0f);
+                        ImGui::TreePop();
+                        ImGui::Spacing();
+                    }
                     ImGui::TreePop();
-                    ImGui::Spacing();
-                }
-                if (ImGui::TreeNode("ambient"))
-                {
-                    //couldn't set a maximum and minimum value for InputFloat3() so this will have to do
-                    static std::vector<GLfloat> amb{ points[i].ambient.x, points[i].ambient.y, points[i].ambient.z };
-                    ImGui::InputFloat3("R,G,B amb", amb.data());
-                    points[i].ambient = vec3(amb.at(0), amb.at(1), amb.at(2));
-                    ImGui::TreePop();
-                    ImGui::Spacing();
-                }
-                if (ImGui::TreeNode("diffuse"))
-                {
-                    static std::vector<GLfloat> diff{ points[i].diffuse.x, points[i].diffuse.y, points[i].diffuse.z };
-                    ImGui::InputFloat3("R,G,B amb", diff.data());
-                    points[i].diffuse = vec3(diff.at(0), diff.at(1), diff.at(2));
-                    ImGui::TreePop();
-                    ImGui::Spacing();
-                }
-                if (ImGui::TreeNode("specular"))
-                {
-                    static auto& spec = spots[i].specular;
-                    setLights(spec, "spec");
-                    ImGui::TreePop();
-                    ImGui::Spacing();
-                }
-                if (ImGui::TreeNode("attenuation"))
-                {
-                    //move this declaration to a higher scope later
-                    ImGui::SliderFloat("Constant", &spots[i].constant, 0.0f, 1.0f, "&.05f");
-                    ImGui::SliderFloat("Linear", &spots[i].linear, 0.0f, 1.0f, "&.05f");
-                    ImGui::SliderFloat("quadratic", &spots[i].quadratic, 0.0f, 1.0f, "&.05f");
-                    ImGui::TreePop();
-                    ImGui::Spacing();
-                }
-                if (ImGui::TreeNode("Cutoff"))
-                {
-                    ImGui::SliderFloat("Cutoff", &spots[i].cutOff, 0.01f, 1.0f);
-                    ImGui::SliderFloat("outerCutoff", &spots[i].OuterCutoff, 0.0f, 1.0f, "&.05f");
-                    ImGui::TreePop();
-                    ImGui::Spacing();
                 }
             }
             ImGui::TreePop();
@@ -239,9 +241,9 @@ static void HelpMarker(const char* desc)
     }
 }
 
-void setLights(vec3& lightValues, string name)
+void setLights(vec3& lightValues)
 {
-    ImGui::InputFloat(("R"s + name).c_str(), &lightValues[0], 0.00f, 1.0f);
-    ImGui::InputFloat(("G"s + name).c_str(), &lightValues[1], 0.00f, 1.0f);
-    ImGui::InputFloat(("B"s + name).c_str(), &lightValues[2], 0.00f, 1.0f);
+    ImGui::InputFloat("R", &lightValues[0], 0.00f, 1.0f);
+    ImGui::InputFloat("G", &lightValues[1], 0.00f, 1.0f);
+    ImGui::InputFloat("B", &lightValues[2], 0.00f, 1.0f);
 }

@@ -36,7 +36,7 @@ struct PointLight : public Light
 
 struct SpotLight : public Light
 {
-	SpotLight(vec3& amb,vec3& diff, vec3& spec, vec3& dir, vec3& pos, GLfloat cut = 0.0f, 
+	SpotLight(vec3 amb,vec3 diff, vec3 spec, vec3 dir, vec3 pos, GLfloat cut = 0.0f, 
 		GLfloat out = 0.0f, GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f);
 	SpotLight();
 	void setAttenuation(GLfloat& L, GLfloat& C, GLfloat& Q) override;
