@@ -12,8 +12,9 @@
 #include"Lights.h"
 #include"VAO.h"
 
-//handles windows resize
 GLuint loadCubeMapTexture(string directory);
+GLuint generateUBO();
+void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off);
 void FramebufferCallback(GLFWwindow* window, GLint width, GLint height);
 void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
 void setLight();
@@ -34,8 +35,8 @@ Ray rayWor;
 int main()
 {
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Millie", NULL, NULL);
@@ -170,6 +171,8 @@ int main()
 	skyvao.GenerateBuffer("VERTEX", skyBox, skyOffset);
 	skyvao.unbind();
 
+	GLuint skyboxMap = loadCubeMapTexture("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\skybox\\");
+
 	glm::mat4 model(1.0f);
 	model = glm::translate(model, glm::vec3(0.0f, -0.5f, -2.0f));
 	model = glm::scale(model, glm::vec3(0.5f));
@@ -185,6 +188,8 @@ int main()
 	skyboxShader.SetInteger("skybox", 0);
 	setLight();
 	GLint width{}, height{};
+	GLuint ubo = generateUBO();
+	glm::mat4 view(1.0f);
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -199,15 +204,26 @@ int main()
 		glfwGetWindowSize(window, &width, &height);
 		modelShader.use();
 		projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
-		modelShader.SetMatrix4("proj", projection);
+		setUboValue(projection, ubo, 0);
 		modelShader.SetVector3f("viewPos", cam.getPos());
-		glm::mat4 view(1.0f);
+		
 		view = cam.getView();
+		setUboValue(view, ubo, 1);
 		modelShader.SetMatrix4("model", model);
-		modelShader.SetMatrix4("view", view);
 		modelShader.SetMatrix3("normalMatrix", Normalmat);
-
 		oModel.Draw(modelShader);
+		UpdatePhong(modelShader);
+
+		glDepthFunc(GL_LEQUAL);
+		skyboxShader.use();
+		view = glm::mat4(glm::mat3(cam.getView()));
+		skyboxShader.SetMatrix4("view_r", view);
+		skyvao.bind();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxMap);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS);
 		/*vao.bind();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diffuse);
@@ -218,7 +234,6 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		*/
 		
-		UpdatePhong(modelShader);
 		SetupUI(&showWindow);
 
 		ImGui::Render();
@@ -328,6 +343,7 @@ void UpdatePhong(Shader& shad)
 	}
 	Light_values::direct.UpdateVecs(shad);
 	shad.SetFloat("material.shininess", Light_values::shine);
+	shad.SetFloat("gamma", Light_values::gamma);
 }
 
 void setLight()
@@ -355,9 +371,6 @@ void setLight()
 			glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)), 1.0f, 0.22f, 0.2f));
 	}
 
-	std::cout << Light_values::points.size() << std::endl;
-	std::cout << "test\n";
-
 }
 
 GLuint loadCubeMapTexture(string directory)
@@ -366,7 +379,7 @@ GLuint loadCubeMapTexture(string directory)
 		"right.jpg",
 		"left.jpg",
 		"top.jpg",
-		"bottom.jpg"
+		"bottom.jpg",
 		"front.jpg",
 		"back.jpg",
 	};
@@ -382,15 +395,15 @@ GLuint loadCubeMapTexture(string directory)
 		GLenum imageFormat{};
 		if (data)
 		{
-			if (nrComponents == 1) imageFormat == GL_RED;
-			else if (nrComponents == 3) imageFormat == GL_RGB;
+			if (nrComponents == 1) imageFormat = GL_RED;
+			else if (nrComponents == 3) imageFormat = GL_RGB;
 			else imageFormat = GL_RGBA;
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, imageFormat, width, height, 0, imageFormat, GL_UNSIGNED_BYTE, data);
 			stbi_image_free(data);
 		}
 		else
 		{
-			Log("Failed to load cube map");
+			Log("Failed to load cube map in directory: " + directory+faces[i]);
 		}
 	}
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -400,4 +413,21 @@ GLuint loadCubeMapTexture(string directory)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	return ID;
+}
+
+GLuint generateUBO() {
+	GLuint uboMatrices;
+	glGenBuffers(1, &uboMatrices);
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
+	return uboMatrices;
+}
+
+void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off)
+{
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferSubData(GL_UNIFORM_BUFFER, off * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(matrice));
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }

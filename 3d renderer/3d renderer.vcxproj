@@ -173,11 +173,11 @@
     <ClInclude Include="VAO.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cubeMap.vs" />
     <None Include="imgui\imgui.natstepfilter" />
     <None Include="Shaders\blinn-phong.fs" />
     <None Include="Shaders\blinn-phong.vs" />
     <None Include="Shaders\cubeMap.fs" />
+    <None Include="Shaders\cubeMap.vs" />
     <None Include="Shaders\none.fs" />
     <None Include="Shaders\none.vs" />
     <None Include="Shaders\pbr.fs" />

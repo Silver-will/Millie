@@ -142,9 +142,6 @@
     <None Include="imgui\imgui.natstepfilter">
       <Filter>imgui</Filter>
     </None>
-    <None Include="cubeMap.vs">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\cubeMap.fs">
       <Filter>Shaders</Filter>
     </None>
@@ -158,6 +155,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\pbr.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cubeMap.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

@@ -48,3 +48,11 @@ void VAO::GenerateBuffer(std::string type, std::vector<GLfloat>& vertices, std::
 	}
 
 }
+
+VAO::~VAO(){
+	glDeleteVertexArrays(1, &this->ID);
+	for (auto& x : buffers)
+	{
+		glDeleteBuffers(1, &x.first);
+	}
+}
