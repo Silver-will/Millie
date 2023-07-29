@@ -1,8 +1,8 @@
-#version 330 core
+#version 420 core
 out vec4 FragColor;
 
-uniform samplerCube skybox;
 in vec3 Tex;
+uniform samplerCube skybox;
 
 void main()
 {

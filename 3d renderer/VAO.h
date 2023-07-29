@@ -11,6 +11,7 @@ struct VAO
 	void GenerateBuffer(std::string type, std::vector<GLfloat>& vertices, std::vector<GLint>& offset);
 	void bind();
 	void unbind();
+	~VAO();
 private:
 	GLuint ID;
 	std::vector<std::pair<GLuint,std::string>> buffers;

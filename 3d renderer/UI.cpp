@@ -204,7 +204,12 @@ void SetupUI(bool* p_open)
             ImGui::TreePop();
             ImGui::Spacing();
         }
-
+    }
+    if (ImGui::CollapsingHeader("Advanced Options"))
+    {
+        ImGui::SeparatorText("Gamma correction");
+        ImGui::SliderFloat("Gamma", &Light_values::gamma, 2.0, 3.0f);
+        ImGui::Spacing();
     }
     ImGui::End();
 }
