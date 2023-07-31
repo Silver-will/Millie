@@ -6,7 +6,7 @@
 using std::string_view;
 string loadFromFile(string_view shader);
 struct Shader {
-	Shader(string_view vertexPath, string_view fragmentPath);
+	Shader(string_view vertexPath, string_view fragmentPath, string_view geometryPath = "");
 	void    checkCompileErrors(GLuint object, string type);
 	void    use();
     void    SetFloat(string name, float value, bool useShader = false);

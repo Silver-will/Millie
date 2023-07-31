@@ -108,6 +108,7 @@ void SetupUI(bool* p_open)
                         ImGui::Spacing();
 
                     }
+                    ImGui::Checkbox("Display shadow", &points[i].shadow);
                     ImGui::TreePop();
                 }
             }
@@ -169,6 +170,7 @@ void SetupUI(bool* p_open)
                         ImGui::TreePop();
                         ImGui::Spacing();
                     }
+                    ImGui::Checkbox("Display shadow", &spots[i].shadow);
                     ImGui::TreePop();
                 }
             }
@@ -200,7 +202,7 @@ void SetupUI(bool* p_open)
         }
         if (ImGui::TreeNode("Material"))
         {
-            ImGui::InputFloat("Shine", &shine, 0.0, 128.0);
+            ImGui::InputFloat("Shine", &shine, 0.0, 256.0);
             ImGui::TreePop();
             ImGui::Spacing();
         }

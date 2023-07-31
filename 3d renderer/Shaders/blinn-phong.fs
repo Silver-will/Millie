@@ -1,4 +1,4 @@
-#version 420 core
+#version 450 core
 in VS_OUT
 {
     vec2 Tex;
@@ -70,6 +70,7 @@ out vec4 fragColor;
 vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir);
 vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir);
+float ShadowCalculation(vec3 fragPos);
 void main()
 {
     vec3 norm = normalize(fs_in.Norm);
@@ -154,4 +155,9 @@ vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     
     
     return (ambient + diffuse + specular);
+}
+
+float ShadowCalculation(vec3 fragPos)
+{
+
 }

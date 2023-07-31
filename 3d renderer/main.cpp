@@ -8,20 +8,15 @@
 #include"General_utility.h"
 #include"camera.h"
 #include"model.h"
-#include"Ray.h"
 #include"Lights.h"
 #include"VAO.h"
 
 GLuint loadCubeMapTexture(string directory);
 GLuint generateUBO();
+void drawPlane();
 void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off);
 void FramebufferCallback(GLFWwindow* window, GLint width, GLint height);
 void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
-void setLight();
-
-//Ray casting algorithm projecting a ray from the mouse in world co-ordinates
-void ScreenSpaceToWorldSpace(GLdouble xpos, GLdouble ypos, GLint width, GLint height);
-
 //calculate change in mouse position and store in global namespace
 void ProcessOffset(GLfloat xpos, GLfloat ypos);
 void Input(GLFWwindow* window);
@@ -31,12 +26,11 @@ const int WIDTH = 1024;
 const int HEIGHT = 720;
 Camera cam;
 glm::mat4 projection = glm::mat4(1.0f);
-Ray rayWor;
 int main()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Millie", NULL, NULL);
@@ -71,6 +65,7 @@ int main()
 
 	Shader modelShader("./Shaders/blinn-phong.vs", "./Shaders/blinn-phong.fs");
 	Shader skyboxShader("./Shaders/cubeMap.vs", "./Shaders/cubeMap.fs");
+	Shader DepthMapShader("./Shaders/cubeDepth.vs", "./Shaders/cubeDepth.fs", "./Shaders/cubeDepth.gs");
 	Model oModel("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
 	std::vector<GLfloat> vertices = {
 		// positions          // normals           // texture coords
@@ -255,27 +250,11 @@ void FramebufferCallback(GLFWwindow* window, GLint width, GLint height)
 
 void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos)
 {
-	GLint width, height;
-	glfwGetWindowSize(window, &width, &height);
-	ScreenSpaceToWorldSpace(xpos, ypos, width, height);
 	float xPos = static_cast<float>(xpos);
 	float yPos = static_cast<float>(ypos);
 	ProcessOffset(xPos, yPos);
 }
 
-void ScreenSpaceToWorldSpace(GLdouble xpos, GLdouble ypos, GLint width, GLint height)
-{
-
-	GLfloat x = (2.0 * xpos) / width - 1;
-	GLfloat y = 1.0 - (2.0 * ypos) / height;
-	glm::vec2 rayNs(x, y);
-	glm::vec4 rayClip = glm::vec4(rayNs.x, rayNs.y, -1.0f, 1.0f);
-	glm::vec4 rayEye = glm::inverse(projection) * rayClip;
-	rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
-	glm::vec4 ray_w = (glm::inverse(cam.getView()) * rayEye);
-	rayWor.ray_dir = glm::vec3(ray_w.x, ray_w.y, ray_w.z);
-	rayWor.ray_dir = glm::normalize(rayWor.ray_dir);
-}
 
 void ProcessOffset(GLfloat xpos, GLfloat ypos)
 {
@@ -346,32 +325,6 @@ void UpdatePhong(Shader& shad)
 	shad.SetFloat("gamma", Light_values::gamma);
 }
 
-void setLight()
-{
-	std::vector<glm::vec3> pointPos{
-		glm::vec3(2.0f, 0.9f, -3.0f),
-		glm::vec3(-2.0f, 0.9f, -1.0f),
-		glm::vec3(0.0f, 0.9f, -2.0f)
-	};
-	for (auto& x : pointPos)
-	{
-		Light_values::points.push_back(PointLight(vec3(0.15), vec3(0.4), vec3(0.5), x, 1.0f, 0.22f, 0.2f));
-	}
-	std::vector<glm::vec3> spotPos
-	{
-		glm::vec3(0.0f, 0.0f, -3.0f),
-		glm::vec3(0.0f, -0.5f, -2.0f),
-		glm::vec3(2.0f, 0.0f, -3.0f),
-		glm::vec3(0.0f, -0.5f, -2.0f)
-	};
-
-	for (size_t i = 0; i < spotPos.size(); i+=2)
-	{
-		Light_values::spots.push_back(SpotLight(vec3(0.0f), vec3(0.4), vec3(1.0), spotPos[i + 1], spotPos[i],
-			glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)), 1.0f, 0.22f, 0.2f));
-	}
-
-}
 
 GLuint loadCubeMapTexture(string directory)
 {
@@ -430,4 +383,10 @@ void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off)
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 	glBufferSubData(GL_UNIFORM_BUFFER, off * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(matrice));
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void drawPlane()
+{
+	VAO planeVao;
+
 }

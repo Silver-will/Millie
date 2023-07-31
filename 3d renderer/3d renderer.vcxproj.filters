@@ -160,6 +160,15 @@
     <None Include="Shaders\cubeMap.vs">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\cubeDepth.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cubeDepth.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cubeDepth.gs">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\imgui.natvis">
