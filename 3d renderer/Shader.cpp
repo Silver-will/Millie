@@ -23,29 +23,46 @@ string loadFromFile(string_view shader)
     return code;
     
 }
-Shader::Shader(string_view vertexPath, string_view fragmentPath)
+Shader::Shader(string_view vertexPath, string_view fragmentPath, string_view geometryPath)
 {
+    GLuint vshader{}, fshader{}, gshader{};
     string vertex = loadFromFile(vertexPath);
     string fragment = loadFromFile(fragmentPath);
+    string geometry{};
+    const char* geometrycode = "";
+
+    this->shad = glCreateProgram();
+
+    if (geometryPath != "")
+    {
+        geometry = loadFromFile(geometryPath);
+        geometrycode = geometry.c_str();
+        gshader = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(gshader, 1, &geometrycode, NULL);
+        glCompileShader(gshader);
+        checkCompileErrors(gshader, "GEOMETRY");
+        glAttachShader(this->shad, gshader);
+    }
     const char* vertexcode = vertex.c_str();
     const char* fragmentcode = fragment.c_str();
-    //ignore the geometry path since the renderer won't be using that
-    GLuint vshader, fshader;
+
 	vshader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vshader, 1, &vertexcode, NULL);
     glCompileShader(vshader);
-    checkCompileErrors(vshader, "vertex");
+    checkCompileErrors(vshader, "VERTEX");
 
     fshader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fshader, 1, &fragmentcode, NULL);
     glCompileShader(fshader);
-    checkCompileErrors(fshader, "fragment");
-    this->shad = glCreateProgram();
+    checkCompileErrors(fshader, "FRAGMENT");
+
+
     glAttachShader(this->shad, vshader);
     glAttachShader(this->shad, fshader);
-    
     glLinkProgram(this -> shad);
+
     checkCompileErrors(this->shad, "PROGRAM");
+    if (geometryPath != "") glDeleteShader(gshader);
     glDeleteShader(vshader);
     glDeleteShader(fshader);
 }

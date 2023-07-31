@@ -7,6 +7,10 @@
 #include"Shader.h"
 using namespace glm;
 
+void generatePointShadow(GLuint& depthFBO, GLuint& depthCubeMap);
+GLuint generateCascadedShadowMap();
+void setLight();
+
 struct Light
 {
 	vec3 ambient;
@@ -20,7 +24,7 @@ private:
 struct PointLight : public Light
 {
 	PointLight(vec3 amb, vec3 diff, vec3 spec, vec3 pos,
-		GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f);
+		GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f, bool shad = 1);
 	PointLight();
 	void setAttenuation(GLfloat& L, GLfloat& C, GLfloat& Q) override;
 	void UpdateVecs(Shader& s, size_t ind) override;
@@ -32,12 +36,13 @@ struct PointLight : public Light
 	GLfloat constant;
 	GLfloat linear;
 	GLfloat quadratic;
+	bool shadow;
 };
 
 struct SpotLight : public Light
 {
-	SpotLight(vec3 amb,vec3 diff, vec3 spec, vec3 dir, vec3 pos, GLfloat cut = 0.0f, 
-		GLfloat out = 0.0f, GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f);
+	SpotLight(vec3 amb, vec3 diff, vec3 spec, vec3 dir, vec3 pos, GLfloat cut = 0.0f,
+		GLfloat out = 0.0f, GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f, bool shad = 1);
 	SpotLight();
 	void setAttenuation(GLfloat& L, GLfloat& C, GLfloat& Q) override;
 	void UpdateVecs(Shader& s, size_t ind) override;
@@ -54,6 +59,7 @@ struct SpotLight : public Light
 
 	GLfloat cutOff;
 	GLfloat OuterCutoff;
+	bool shadow;
 };
 
 struct DirLight
