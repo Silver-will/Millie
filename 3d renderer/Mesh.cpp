@@ -29,7 +29,6 @@ void Mesh::Draw(Shader& shader)
             number = std::to_string(normalNr++);
         else if (name == "texture_height")
             number = std::to_string(heightNr++);
-        
         name = "material." + name + number;
         const char* fs = name.c_str();
         glUniform1i(glGetUniformLocation(shader.shad, fs), i);

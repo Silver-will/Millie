@@ -24,11 +24,10 @@ void generatePointShadow(GLuint& depthFBO, GLuint& depthCubeMap)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 PointLight::PointLight(vec3 amb, vec3 diff, vec3 spec, vec3 pos,
-	 GLfloat con, GLfloat line, GLfloat quad, bool shad)
-		:ambient{ amb }, diffuse{ diff }, specular{ spec }, position{ pos }, constant{ con },
-			linear{ line }, quadratic{ quad }, shadow{shad}
+	GLfloat con, GLfloat line, GLfloat quad, bool shad)
+	:ambient{ amb }, diffuse{ diff }, specular{ spec }, position{ pos }, constant{ con },
+	linear{ line }, quadratic{ quad }, shadow{ shad }, lastPosition{glm::vec3(-1000.0f)}
 {
-	
 }
 PointLight::PointLight()
 {
@@ -39,6 +38,8 @@ PointLight::PointLight()
 	this->constant = 0.0f;
 	this->linear = 0.0f;
 	this->quadratic = 0.0f;
+	this->shadow = false;
+	this->lastPosition = vec3(-1000.0f);
 }
 
 void PointLight::setAttenuation(GLfloat& L, GLfloat& C, GLfloat& Q)
@@ -60,6 +61,8 @@ void PointLight::UpdateVecs(Shader& s, size_t ind)
 	s.SetFloat(p + n + "].constant", constant);
 	s.SetFloat(p + n + "].linear", linear);
 	s.SetFloat(p + n + "].quadratic", quadratic);
+
+	s.SetInteger(p + n + "].shadow", shadow);
 	s.SetInteger("point_count", Light_values::points.size());
 }
 
@@ -109,6 +112,7 @@ void SpotLight::UpdateVecs(Shader& s, size_t ind)
 	s.SetFloat(p + n + "].cutOff", cutOff);
 	s.SetFloat(p + n + "].outerCutOff", OuterCutoff);
 	
+	s.SetInteger(p + n + "].shadow", shadow);
 	s.SetInteger("spot_count", Light_values::spots.size());
 }
 
@@ -130,20 +134,20 @@ void DirLight::UpdateVecs(Shader& s)
 void setLight()
 {
 	std::vector<glm::vec3> pointPos{
-		glm::vec3(2.0f, 0.9f, -3.0f),
+		glm::vec3(2.0f, 0.0f, -1.0f),
 		glm::vec3(-2.0f, 0.9f, -1.0f),
 		glm::vec3(0.0f, 0.9f, -2.0f)
 	};
 	for (auto& x : pointPos)
 	{
-		Light_values::points.push_back(PointLight(vec3(0.15), vec3(0.4), vec3(0.5), x, 1.0f, 0.22f, 0.2f));
+		Light_values::points.push_back(PointLight(vec3(0.15), vec3(0.4), vec3(1.0), x, 1.0f, 0.22f, 0.0019f));
 	}
 	std::vector<glm::vec3> spotPos
 	{
 		glm::vec3(0.0f, 0.0f, -3.0f),
 		glm::vec3(0.0f, -0.5f, -2.0f),
-		glm::vec3(2.0f, 0.0f, -3.0f),
-		glm::vec3(0.0f, -0.5f, -2.0f)
+		//glm::vec3(2.0f, 0.0f, -3.0f),
+		//glm::vec3(0.0f, -0.5f, -2.0f)
 	};
 
 	for (size_t i = 0; i < spotPos.size(); i += 2)
@@ -154,6 +158,15 @@ void setLight()
 
 }
 
+void PointLight::bindFramebuffer()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, this->depthBuff);
+}
+
+void PointLight::unbindFramebuffer()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 namespace Light_values
 {
