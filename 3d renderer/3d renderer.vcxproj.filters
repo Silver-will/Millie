@@ -169,6 +169,12 @@
     <None Include="Shaders\cubeDepth.gs">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\b_phong_no_spec.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\b_phong_no_spec.vs">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\imgui.natvis">

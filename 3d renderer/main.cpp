@@ -12,12 +12,14 @@
 #include"VAO.h"
 
 GLuint loadCubeMapTexture(string directory);
+void drawDepthMap(PointLight& light, Shader& s, GLuint& tex);
+void drawLightPos();
 GLuint generateUBO();
-void drawPlane();
+void drawPlane(GLuint& Tex, Shader& s);
+void drawCubes(GLuint& Tex, Shader& s);
 void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off);
 void FramebufferCallback(GLFWwindow* window, GLint width, GLint height);
 void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
-//calculate change in mouse position and store in global namespace
 void ProcessOffset(GLfloat xpos, GLfloat ypos);
 void Input(GLFWwindow* window);
 void UpdatePhong(Shader& shad);
@@ -50,8 +52,6 @@ int main()
 	ImGui_ImplOpenGL3_Init();
 	bool showWindow = true;
 
-	
-
 	glfwSetFramebufferSizeCallback(window, FramebufferCallback);
 		
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -63,55 +63,11 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	//stbi_set_flip_vertically_on_load(true);
 
-	Shader modelShader("./Shaders/blinn-phong.vs", "./Shaders/blinn-phong.fs");
+	Shader modelShader("./Shaders/b_phong_no_spec.vs", "./Shaders/b_phong_no_spec.fs");
 	Shader skyboxShader("./Shaders/cubeMap.vs", "./Shaders/cubeMap.fs");
 	Shader DepthMapShader("./Shaders/cubeDepth.vs", "./Shaders/cubeDepth.fs", "./Shaders/cubeDepth.gs");
-	Model oModel("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
-	std::vector<GLfloat> vertices = {
-		// positions          // normals           // texture coords
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
-	};
-
+	Shader baseShader("./Shaders/none.vs", "./Shaders/none.fs");
+	//Model Cyborg("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
 	std::vector<GLfloat> skyBox{
 		-1.0f,  1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,
@@ -155,36 +111,24 @@ int main()
 		-1.0f, -1.0f,  1.0f,
 		 1.0f, -1.0f,  1.0f
 	};
-	std::vector<GLint> offset{ 3,3,2 };
-	/*VAO vao;
-	vao.GenerateBuffer("VERTEX", vertices, offset);
-	vao.unbind();
-	*/
-
 	std::vector<GLint> skyOffset{ 3 };
 	VAO skyvao;
 	skyvao.GenerateBuffer("VERTEX", skyBox, skyOffset);
 	skyvao.unbind();
 
 	GLuint skyboxMap = loadCubeMapTexture("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\skybox\\");
+	GLuint wood = TextureFromFile("wood.png", "C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources", "texture_diffuse");
 
-	glm::mat4 model(1.0f);
-	model = glm::translate(model, glm::vec3(0.0f, -0.5f, -2.0f));
-	model = glm::scale(model, glm::vec3(0.5f));
-	//GLuint diffuse = TextureFromFile("container2.png", "C:\\Users\\katsura\\Documents\\PROGRAMMING\\LearnOpenGL\\resources\\textures");
-	//GLuint specular = TextureFromFile("container2_specular.png", "C:\\Users\\katsura\\Documents\\PROGRAMMING\\LearnOpenGL\\resources\\textures");
-	glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
-
-	/*modelShader.use();
+	modelShader.use();
 	modelShader.SetInteger("material.texture_diffuse1", 0);
-	modelShader.SetInteger("material.texture_specular1", 1);
-	*/
+	
 	skyboxShader.use();
 	skyboxShader.SetInteger("skybox", 0);
 	setLight();
 	GLint width{}, height{};
 	GLuint ubo = generateUBO();
 	glm::mat4 view(1.0f);
+	
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -196,20 +140,45 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		/*for (auto& point : Light_values::points)
+		{
+			drawDepthMap(point, DepthMapShader, wood);
+		}
+		*/
 		glfwGetWindowSize(window, &width, &height);
+		glViewport(0, 0, width, height);
 		modelShader.use();
-		projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 		setUboValue(projection, ubo, 0);
-		modelShader.SetVector3f("viewPos", cam.getPos());
-		
 		view = cam.getView();
 		setUboValue(view, ubo, 1);
-		modelShader.SetMatrix4("model", model);
-		modelShader.SetMatrix3("normalMatrix", Normalmat);
-		oModel.Draw(modelShader);
+		modelShader.SetVector3f("viewPos", cam.getPos());
+		modelShader.SetVector3f("material.specular", glm::vec3(0.5f));
 		UpdatePhong(modelShader);
+		drawCubes(wood, modelShader);
+		drawPlane(wood, modelShader);
+		for (auto& x : Light_values::points)
+		{
+			baseShader.use();
+			glm::mat4 lightModel(1.0f);
+			lightModel = glm::translate(lightModel, x.position);
+			lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+			baseShader.SetMatrix4("model", lightModel);
+			drawLightPos();
+		}
 
-		glDepthFunc(GL_LEQUAL);
+		/*for (auto& light : Light_values::points)
+		{
+			int i = 0;
+			if (light.shadow)
+			{
+				glActiveTexture(GL_TEXTURE0 + i);
+				glBindTexture(GL_TEXTURE_CUBE_MAP, light.cubeMap);
+				i++;
+			}
+		}
+		*/
+		/*glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
 		view = glm::mat4(glm::mat3(cam.getView()));
 		skyboxShader.SetMatrix4("view_r", view);
@@ -219,18 +188,9 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
-		/*vao.bind();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diffuse);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, specular);
-
-		glDrawArrays(GL_TRIANGLES, 0, 36);
 		*/
-		
-		SetupUI(&showWindow);
 
+		SetupUI(&showWindow);
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		glfwSwapBuffers(window);
@@ -385,8 +345,192 @@ void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off)
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void drawPlane()
+void drawPlane(GLuint& Tex, Shader& s)
 {
-	VAO planeVao;
-
+	static VAO planevao;
+	static bool first = true;
+	glm::mat4 model(1.0f);
+	model = glm::translate(model, glm::vec3(0.0, -1.5, 0.0f));
+	glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
+	s.SetMatrix4("model", model);
+	s.SetMatrix3("normalMatrix", Normalmat);
+	if (first)
+	{
+		std::vector<GLfloat> planeVertices = {
+			-25.0f, 0.0f, 25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+			25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f,
+			-25.0f, 0.0f, -25.0f, 0.0f, 1.0f, 0.0f,  0.0f, 25.0f,
+			-25.0f, 0.0f, 25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+			25.0f, 0.0f, 25.0f,   0.0f, 1.0f, 0.0f,  25.0f, 0.0f,
+			25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f,
+		};
+		std::vector<GLint> planeOffset{ 3,3,2 };
+		planevao.GenerateBuffer("VERTEX", planeVertices, planeOffset);
+		first = false;	
+	}
+	planevao.bind();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, Tex);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	planevao.unbind();
 }
+
+void drawCubes(GLuint& Tex, Shader& s)
+{
+	static bool first = true;
+	static VAO cubevao;
+	glm::mat4 model(1.0f);
+	model = glm::translate(model, glm::vec3(0.0f, 1.5f, -2.0f));
+	model = glm::scale(model, glm::vec3(0.5f));
+	glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
+	s.SetMatrix4("model", model);
+	s.SetMatrix3("normalMatrix", Normalmat);
+	if (first)
+	{
+		std::vector<GLfloat> cubeVertices{
+
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f 
+		};
+		std::vector<GLint> cubeOffset{ 3,3,2 };
+		cubevao.GenerateBuffer("VERTEX", cubeVertices, cubeOffset);
+		first = false;
+	}
+	cubevao.bind();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, Tex);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	cubevao.unbind();
+}
+
+void drawDepthMap(PointLight& light,Shader& s, GLuint& tex)
+{
+	s.use();
+	if (light.shadow == true && light.lastPosition != light.position)
+	{
+		const GLfloat WIDTH = 1024, HEIGHT = 1024;
+		GLfloat nearPlane = 1.0f;
+		GLfloat farPlane = 25.0f;
+
+		static glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), WIDTH/ HEIGHT, nearPlane, farPlane);
+		std::vector<glm::mat4> transforms;
+	
+		if (light.depthBuff == 0)
+			generatePointShadow(light.depthBuff, light.cubeMap);
+			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+
+			glViewport(0, 0, WIDTH, HEIGHT);
+			light.bindFramebuffer();
+			glClear(GL_DEPTH_BUFFER_BIT);
+			for (size_t i = 0; i < 6; i++)
+				s.SetMatrix4("shadowMatrices[" + std::to_string(i) + "]", transforms[i]);
+			s.SetFloat("far_plane", farPlane);
+			s.SetVector3f("lightPos", light.position);
+			drawCubes(tex, s);
+			drawPlane(tex, s);
+			light.unbindFramebuffer();
+			light.lastPosition = light.position;		
+	}
+}
+
+void drawLightPos()
+{
+	static bool first = true;
+	static VAO lightvao;
+	if (first)
+	{
+		std::vector<GLfloat> lightVertices = {
+		-0.5f, -0.5f, -0.5f,  
+		 0.5f, -0.5f, -0.5f, 
+		 0.5f,  0.5f, -0.5f,  
+		 0.5f,  0.5f, -0.5f,
+		-0.5f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f, 
+
+		-0.5f, -0.5f,  0.5f, 
+		 0.5f, -0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f,
+
+		-0.5f,  0.5f,  0.5f, 
+		-0.5f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f,  0.5f, 
+		-0.5f,  0.5f,  0.5f,
+
+		 0.5f,  0.5f,  0.5f, 
+		 0.5f,  0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f, 
+		 0.5f, -0.5f, -0.5f, 
+		 0.5f, -0.5f,  0.5f, 
+		 0.5f,  0.5f,  0.5f,
+
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f,  0.5f, 
+		 0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f, 
+		-0.5f, -0.5f, -0.5f,
+
+		-0.5f,  0.5f, -0.5f,  
+		 0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f,  0.5f,  
+		 0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f, 
+		-0.5f,  0.5f, -0.5f,
+		};
+		std::vector<GLint> lightOffset{3};
+		lightvao.GenerateBuffer("VERTEX", lightVertices, lightOffset);
+		first = false;
+	}
+	lightvao.bind();
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+

@@ -176,6 +176,8 @@
     <None Include="imgui\imgui.natstepfilter" />
     <None Include="Shaders\blinn-phong.fs" />
     <None Include="Shaders\blinn-phong.vs" />
+    <None Include="Shaders\b_phong_no_spec.fs" />
+    <None Include="Shaders\b_phong_no_spec.vs" />
     <None Include="Shaders\cubeDepth.fs" />
     <None Include="Shaders\cubeDepth.gs" />
     <None Include="Shaders\cubeDepth.vs" />
