@@ -119,13 +119,12 @@ vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir)
     vec3 diffuse = light.diffuse * diff * vec3(texture(material.texture_diffuse1, fs_in.Tex)).rgb;
 
     vec3 specular = light.specular * spec * vec3(texture(material.texture_specular1, fs_in.Tex)).rgb;
-    float shadow = light.shadow ?  ShadowCalculation(fragpos, light) : 0.0;
-
+    
     ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;
     
-    return (ambient + (1.0 - shadow) * (diffuse + specular));
+    return  (ambient + diffuse + specular);
 }
 
 vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir)

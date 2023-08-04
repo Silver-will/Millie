@@ -81,6 +81,9 @@
     <ClCompile Include="glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Shadow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h">
@@ -131,6 +134,9 @@
     <ClInclude Include="VAO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Shadow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\blinn-phong.vs">
@@ -173,6 +179,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\b_phong_no_spec.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\debugQuad.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\debugQuad.fs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
