@@ -7,7 +7,7 @@
 #include"Shader.h"
 using namespace glm;
 
-void generatePointShadow(GLuint& depthFBO, GLuint& depthCubeMap);
+void generatePointFBO(Shader& s);
 GLuint generateCascadedShadowMap();
 void setLight();
 
@@ -39,8 +39,8 @@ struct PointLight : public Light
 	GLfloat linear;
 	GLfloat quadratic;
 
-	GLuint cubeMap;
-	GLuint depthBuff;
+	GLuint cubeMap{};
+	GLuint depthFBO{};
 	bool shadow;
 	vec3 lastPosition;
 };

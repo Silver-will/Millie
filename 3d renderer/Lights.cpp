@@ -1,27 +1,32 @@
 #include "Lights.h"
-
-void generatePointShadow(GLuint& depthFBO, GLuint& depthCubeMap)
+#include<iostream>
+void generatePointFBO(Shader& s)
 {
 	const GLuint HEIGHT = 1024, WIDTH = 1024;
-	glGenFramebuffers(1, &depthFBO);
-
-	glGenTextures(1, &depthCubeMap);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMap);
-	for (size_t i = 0; i < 6; i++)
+	s.use();
+	for (size_t i = 0; i < Light_values::points.size(); i++)
 	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, WIDTH, HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		auto& point = Light_values::points[i];
+		glGenFramebuffers(1, &point.depthFBO);
+		glGenTextures(1, &point.cubeMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, point.cubeMap);
+		for (size_t j = 0; j < 6; j++)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, 0, GL_DEPTH_COMPONENT, WIDTH, HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		}
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubeMap, 0);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, point.depthFBO);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, point.cubeMap, 0);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		s.SetInteger("points[" + std::to_string(i) + "].depthMap", i + 1);
+	}
 }
 PointLight::PointLight(vec3 amb, vec3 diff, vec3 spec, vec3 pos,
 	GLfloat con, GLfloat line, GLfloat quad, bool shad)
@@ -160,7 +165,7 @@ void setLight()
 
 void PointLight::bindFramebuffer()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, this->depthBuff);
+	glBindFramebuffer(GL_FRAMEBUFFER, this->depthFBO);
 }
 
 void PointLight::unbindFramebuffer()

@@ -10,10 +10,12 @@
 #include"model.h"
 #include"Lights.h"
 #include"VAO.h"
+#include"Shadow.h"
 
 GLuint loadCubeMapTexture(string directory);
-void drawDepthMap(PointLight& light, Shader& s, GLuint& tex);
+void drawPointShadow(PointLight& light, Shader& s, GLuint& tex);
 void drawLightPos();
+void drawDebugQuad();
 GLuint generateUBO();
 void drawPlane(GLuint& Tex, Shader& s);
 void drawCubes(GLuint& Tex, Shader& s);
@@ -61,12 +63,14 @@ int main()
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	
 	//stbi_set_flip_vertically_on_load(true);
 
 	Shader modelShader("./Shaders/b_phong_no_spec.vs", "./Shaders/b_phong_no_spec.fs");
 	Shader skyboxShader("./Shaders/cubeMap.vs", "./Shaders/cubeMap.fs");
 	Shader DepthMapShader("./Shaders/cubeDepth.vs", "./Shaders/cubeDepth.fs", "./Shaders/cubeDepth.gs");
 	Shader baseShader("./Shaders/none.vs", "./Shaders/none.fs");
+	Shader debug("./Shaders/debugQuad.vs", "./Shaders/debugQuad.fs");
 	//Model Cyborg("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
 	std::vector<GLfloat> skyBox{
 		-1.0f,  1.0f, -1.0f,
@@ -121,42 +125,53 @@ int main()
 
 	modelShader.use();
 	modelShader.SetInteger("material.texture_diffuse1", 0);
-	
 	skyboxShader.use();
 	skyboxShader.SetInteger("skybox", 0);
 	setLight();
+	generatePointFBO(modelShader);
 	GLint width{}, height{};
 	GLuint ubo = generateUBO();
 	glm::mat4 view(1.0f);
 	
+	debug.use();
+	debug.SetInteger("depthMap", 0);
 	while (!glfwWindowShouldClose(window))
 	{
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-		
-		Input(window);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		Input(window);
 
-		/*for (auto& point : Light_values::points)
+		for (auto& light: Light_values::points)
 		{
-			drawDepthMap(point, DepthMapShader, wood);
+			drawPointShadow(light, DepthMapShader, wood);
 		}
-		*/
+		
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glfwGetWindowSize(window, &width, &height);
 		glViewport(0, 0, width, height);
 		modelShader.use();
+		UpdatePhong(modelShader);
 		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 		setUboValue(projection, ubo, 0);
 		view = cam.getView();
 		setUboValue(view, ubo, 1);
 		modelShader.SetVector3f("viewPos", cam.getPos());
 		modelShader.SetVector3f("material.specular", glm::vec3(0.5f));
-		UpdatePhong(modelShader);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, wood);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[0].cubeMap);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[1].cubeMap);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[2].cubeMap);
 		drawCubes(wood, modelShader);
 		drawPlane(wood, modelShader);
+
 		for (auto& x : Light_values::points)
 		{
 			baseShader.use();
@@ -166,18 +181,7 @@ int main()
 			baseShader.SetMatrix4("model", lightModel);
 			drawLightPos();
 		}
-
-		/*for (auto& light : Light_values::points)
-		{
-			int i = 0;
-			if (light.shadow)
-			{
-				glActiveTexture(GL_TEXTURE0 + i);
-				glBindTexture(GL_TEXTURE_CUBE_MAP, light.cubeMap);
-				i++;
-			}
-		}
-		*/
+		
 		/*glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
 		view = glm::mat4(glm::mat3(cam.getView()));
@@ -189,7 +193,6 @@ int main()
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
 		*/
-
 		SetupUI(&showWindow);
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -272,6 +275,7 @@ void Input(GLFWwindow* window)
 
 void UpdatePhong(Shader& shad)
 {
+	shad.use();
 	for (size_t i = 0; i < Light_values::points.size(); i++)
 	{
 		Light_values::points[i].UpdateVecs(shad, i);
@@ -369,8 +373,6 @@ void drawPlane(GLuint& Tex, Shader& s)
 		first = false;	
 	}
 	planevao.bind();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, Tex);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	planevao.unbind();
 }
@@ -436,45 +438,47 @@ void drawCubes(GLuint& Tex, Shader& s)
 		first = false;
 	}
 	cubevao.bind();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, Tex);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	model = mat4(1.0f);
+	model = glm::translate(model, glm::vec3(2.0f, -0.5f, -1.0f));
+	s.SetMatrix4("model", model);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	model = mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 1.0f));
+	s.SetMatrix4("model", model);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	cubevao.unbind();
 }
 
-void drawDepthMap(PointLight& light,Shader& s, GLuint& tex)
+void drawPointShadow(PointLight& light,Shader& s, GLuint& tex)
 {
-	s.use();
-	if (light.shadow == true && light.lastPosition != light.position)
+	static const GLfloat nearPlane = 1.0f;
+	static const GLfloat farPlane = 25.0f;
+	static std::vector<glm::mat4> transforms;
+	static const GLfloat WIDTH = 1024, HEIGHT = 1024;
+	if (light.lastPosition != light.position)
 	{
-		const GLfloat WIDTH = 1024, HEIGHT = 1024;
-		GLfloat nearPlane = 1.0f;
-		GLfloat farPlane = 25.0f;
-
+		transforms.clear();
 		static glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), WIDTH/ HEIGHT, nearPlane, farPlane);
-		std::vector<glm::mat4> transforms;
-	
-		if (light.depthBuff == 0)
-			generatePointShadow(light.depthBuff, light.cubeMap);
-			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
-			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-			transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-
-			glViewport(0, 0, WIDTH, HEIGHT);
-			light.bindFramebuffer();
-			glClear(GL_DEPTH_BUFFER_BIT);
-			for (size_t i = 0; i < 6; i++)
-				s.SetMatrix4("shadowMatrices[" + std::to_string(i) + "]", transforms[i]);
-			s.SetFloat("far_plane", farPlane);
-			s.SetVector3f("lightPos", light.position);
-			drawCubes(tex, s);
-			drawPlane(tex, s);
-			light.unbindFramebuffer();
-			light.lastPosition = light.position;		
+		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+		light.lastPosition = light.position;
 	}
+	glViewport(0, 0, WIDTH, HEIGHT);
+	light.bindFramebuffer();
+	glClear(GL_DEPTH_BUFFER_BIT);
+	s.use();
+	for (size_t i = 0; i < 6; i++)
+		s.SetMatrix4("shadowMatrices[" + std::to_string(i) + "]", transforms[i]);
+	s.SetFloat("far_plane", farPlane);
+	s.SetVector3f("lightPos", light.position);
+	drawCubes(tex, s);
+	drawPlane(tex, s);
+	light.unbindFramebuffer();
 }
 
 void drawLightPos()
@@ -532,5 +536,26 @@ void drawLightPos()
 	}
 	lightvao.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void drawDebugQuad()
+{
+	static VAO debugvao;
+	static bool first = true;
+	if (first)
+	{
+		std::vector<GLfloat> quadVertices{
+			 -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		std::vector<GLint> quadOffset{ 3,2 };
+		debugvao.GenerateBuffer("VERTEX", quadVertices, quadOffset);
+		first = false;
+	}
+	debugvao.bind();
+	glDrawArrays(GL_TRIANGLES, 0, 4);
+	debugvao.unbind();
 }
 
