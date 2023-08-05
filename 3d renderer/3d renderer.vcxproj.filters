@@ -84,6 +84,9 @@
     <ClCompile Include="Shadow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Buffers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h">
@@ -137,6 +140,9 @@
     <ClInclude Include="Shadow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Buffers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\blinn-phong.vs">
@@ -181,10 +187,10 @@
     <None Include="Shaders\b_phong_no_spec.vs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\debugQuad.vs">
+    <None Include="Shaders\Quad.vs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\debugQuad.fs">
+    <None Include="Shaders\Quad.fs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

@@ -105,7 +105,7 @@ void main()
 
 vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir)
 {
-    vec3 lightDir = normalize(fragpos - light.position);
+    vec3 lightDir = normalize(light.position - fragpos);
 
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -147,7 +147,7 @@ vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir)
 
 vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
-    vec3 lightDir = normalize(fragPos - light.position);
+    vec3 lightDir = normalize(light.position - fragPos);
 
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 halfwayDir = normalize(lightDir + viewDir);

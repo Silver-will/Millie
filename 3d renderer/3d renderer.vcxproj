@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AABB.cpp" />
+    <ClCompile Include="Buffers.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="def.cpp" />
     <ClCompile Include="General_utility.cpp" />
@@ -157,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h" />
+    <ClInclude Include="Buffers.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="General_utility.h" />
     <ClInclude Include="imgui\imconfig.h" />
@@ -185,8 +187,8 @@
     <None Include="Shaders\cubeDepth.vs" />
     <None Include="Shaders\cubeMap.fs" />
     <None Include="Shaders\cubeMap.vs" />
-    <None Include="Shaders\debugQuad.fs" />
-    <None Include="Shaders\debugQuad.vs" />
+    <None Include="Shaders\Quad.fs" />
+    <None Include="Shaders\Quad.vs" />
     <None Include="Shaders\none.fs" />
     <None Include="Shaders\none.vs" />
     <None Include="Shaders\pbr.fs" />

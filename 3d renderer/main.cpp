@@ -1,25 +1,23 @@
-#include"UI.h"
-#include<GLAD/glad.h>
-#include<GLFW/glfw3.h>
 #include<glm/glm.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<iostream>
 
+#include"UI.h"
 #include"General_utility.h"
 #include"camera.h"
 #include"model.h"
 #include"Lights.h"
 #include"VAO.h"
 #include"Shadow.h"
+#include"Buffers.h"
 
 GLuint loadCubeMapTexture(string directory);
 void drawPointShadow(PointLight& light, Shader& s, GLuint& tex);
 void drawLightPos();
-void drawDebugQuad();
-GLuint generateUBO();
+void drawQuad();
 void drawPlane(GLuint& Tex, Shader& s);
 void drawCubes(GLuint& Tex, Shader& s);
-void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off);
+
 void FramebufferCallback(GLFWwindow* window, GLint width, GLint height);
 void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
 void ProcessOffset(GLfloat xpos, GLfloat ypos);
@@ -70,7 +68,7 @@ int main()
 	Shader skyboxShader("./Shaders/cubeMap.vs", "./Shaders/cubeMap.fs");
 	Shader DepthMapShader("./Shaders/cubeDepth.vs", "./Shaders/cubeDepth.fs", "./Shaders/cubeDepth.gs");
 	Shader baseShader("./Shaders/none.vs", "./Shaders/none.fs");
-	Shader debug("./Shaders/debugQuad.vs", "./Shaders/debugQuad.fs");
+	Shader quadShader("./Shaders/Quad.vs", "./Shaders/Quad.fs");
 	//Model Cyborg("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
 	std::vector<GLfloat> skyBox{
 		-1.0f,  1.0f, -1.0f,
@@ -122,57 +120,70 @@ int main()
 
 	GLuint skyboxMap = loadCubeMapTexture("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\skybox\\");
 	GLuint wood = TextureFromFile("wood.png", "C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources", "texture_diffuse");
+	GLint width{}, height{};
+	glfwGetWindowSize(window, &width, &height);
+	FrameBuffer screenBuff;
+	screenBuff.setDimensions(width, height);
+	screenBuff.attachColorTex();
+
 
 	modelShader.use();
 	modelShader.SetInteger("material.texture_diffuse1", 0);
+	modelShader.SetInteger("depth", 1);
 	skyboxShader.use();
 	skyboxShader.SetInteger("skybox", 0);
+	quadShader.use();
+	quadShader.SetInteger("colorTex", 0);
 	setLight();
 	generatePointFBO(modelShader);
-	GLint width{}, height{};
+	
+	
 	GLuint ubo = generateUBO();
 	glm::mat4 view(1.0f);
-	
-	debug.use();
-	debug.SetInteger("depthMap", 0);
 	while (!glfwWindowShouldClose(window))
 	{
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+		screenBuff.bind();
+		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
 		Input(window);
 
-		for (auto& light: Light_values::points)
+		/*for (auto& light : Light_values::points)
 		{
 			drawPointShadow(light, DepthMapShader, wood);
 		}
-		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		*/
 		glfwGetWindowSize(window, &width, &height);
-		glViewport(0, 0, width, height);
+		//glViewport(0, 0, width, height);
 		modelShader.use();
 		UpdatePhong(modelShader);
-		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width/ (GLfloat)height, 0.1f, 100.0f);
 		setUboValue(projection, ubo, 0);
 		view = cam.getView();
 		setUboValue(view, ubo, 1);
 		modelShader.SetVector3f("viewPos", cam.getPos());
 		modelShader.SetVector3f("material.specular", glm::vec3(0.5f));
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wood);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[0].cubeMap);
+		//glActiveTexture(GL_TEXTURE1);
+		//glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[0].cubeMap);
+		/*
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[1].cubeMap);
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[2].cubeMap);
+		*/
 		drawCubes(wood, modelShader);
 		drawPlane(wood, modelShader);
 
-		for (auto& x : Light_values::points)
+		/*for (auto& x : Light_values::points)
 		{
 			baseShader.use();
 			glm::mat4 lightModel(1.0f);
@@ -181,8 +192,8 @@ int main()
 			baseShader.SetMatrix4("model", lightModel);
 			drawLightPos();
 		}
-		
-		/*glDepthFunc(GL_LEQUAL);
+		*/
+		glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
 		view = glm::mat4(glm::mat3(cam.getView()));
 		skyboxShader.SetMatrix4("view_r", view);
@@ -192,10 +203,17 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
-		*/
+		screenBuff.unbind();
+		glDisable(GL_DEPTH_TEST);
+		glClear(GL_COLOR_BUFFER_BIT);
+		quadShader.use();
+		screenBuff.bindTex();
+		drawQuad();
+		
 		SetupUI(&showWindow);
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -332,27 +350,10 @@ GLuint loadCubeMapTexture(string directory)
 	return ID;
 }
 
-GLuint generateUBO() {
-	GLuint uboMatrices;
-	glGenBuffers(1, &uboMatrices);
-	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
-	return uboMatrices;
-}
-
-void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off)
-{
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	glBufferSubData(GL_UNIFORM_BUFFER, off * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(matrice));
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
 void drawPlane(GLuint& Tex, Shader& s)
 {
 	static VAO planevao;
-	static bool first = true;
+	static bool first{ true };
 	glm::mat4 model(1.0f);
 	model = glm::translate(model, glm::vec3(0.0, -1.5, 0.0f));
 	glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
@@ -371,6 +372,7 @@ void drawPlane(GLuint& Tex, Shader& s)
 		std::vector<GLint> planeOffset{ 3,3,2 };
 		planevao.GenerateBuffer("VERTEX", planeVertices, planeOffset);
 		first = false;	
+		std::cout << "cruise" << std::endl;
 	}
 	planevao.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -379,8 +381,8 @@ void drawPlane(GLuint& Tex, Shader& s)
 
 void drawCubes(GLuint& Tex, Shader& s)
 {
-	static bool first = true;
 	static VAO cubevao;
+	static bool first{ true };
 	glm::mat4 model(1.0f);
 	model = glm::translate(model, glm::vec3(0.0f, 1.5f, -2.0f));
 	model = glm::scale(model, glm::vec3(0.5f));
@@ -439,14 +441,6 @@ void drawCubes(GLuint& Tex, Shader& s)
 	}
 	cubevao.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	model = mat4(1.0f);
-	model = glm::translate(model, glm::vec3(2.0f, -0.5f, -1.0f));
-	s.SetMatrix4("model", model);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	model = mat4(1.0f);
-	model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 1.0f));
-	s.SetMatrix4("model", model);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
 	cubevao.unbind();
 }
 
@@ -476,7 +470,7 @@ void drawPointShadow(PointLight& light,Shader& s, GLuint& tex)
 		s.SetMatrix4("shadowMatrices[" + std::to_string(i) + "]", transforms[i]);
 	s.SetFloat("far_plane", farPlane);
 	s.SetVector3f("lightPos", light.position);
-	drawCubes(tex, s);
+	//drawCubes(tex, s);
 	drawPlane(tex, s);
 	light.unbindFramebuffer();
 }
@@ -538,24 +532,28 @@ void drawLightPos()
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-void drawDebugQuad()
+void drawQuad()
 {
 	static VAO debugvao;
 	static bool first = true;
 	if (first)
 	{
 		std::vector<GLfloat> quadVertices{
-			 -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+			-1.0f,  1.0f, 0.0f,		0.0f, 1.0f, 
+			 1.0f,  1.0f, 0.0f,		1.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f,		0.0f, 0.0f,
+
+			-1.0f, -1.0f, 0.0f,		0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f,		1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f,		1.0f, 0.0f,
+			
 		};
 		std::vector<GLint> quadOffset{ 3,2 };
 		debugvao.GenerateBuffer("VERTEX", quadVertices, quadOffset);
 		first = false;
 	}
 	debugvao.bind();
-	glDrawArrays(GL_TRIANGLES, 0, 4);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	debugvao.unbind();
 }
 

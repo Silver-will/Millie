@@ -84,7 +84,7 @@ vec3 gridSamplingDisk[20] = vec3[]
    vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
    vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
 );
-
+uniform samplerCube depth;
 void main()
 {
     vec3 norm = normalize(fs_in.Norm);
@@ -124,6 +124,7 @@ vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir)
     specular *= attenuation;
 
     float shadow = light.shadow ? ShadowCalculation(fragpos, light) : 0.0;
+
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
     return lighting;
@@ -187,7 +188,7 @@ float ShadowCalculation(vec3 fragPos, PointLight light)
     float closestDepth;
     for(int i = 0; i < samples; ++i)
     {
-        closestDepth = texture(light.depthMap, fragToLight + gridSamplingDisk[i] * diskRadius).r;
+        closestDepth = texture(depth, fragToLight + gridSamplingDisk[i] * diskRadius).r;
         closestDepth *= far_plane;
         if(currentDepth - bias > closestDepth)
             shadow += 1.0;

@@ -3,7 +3,6 @@
 void generatePointFBO(Shader& s)
 {
 	const GLuint HEIGHT = 1024, WIDTH = 1024;
-	s.use();
 	for (size_t i = 0; i < Light_values::points.size(); i++)
 	{
 		auto& point = Light_values::points[i];
@@ -25,7 +24,8 @@ void generatePointFBO(Shader& s)
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		s.SetInteger("points[" + std::to_string(i) + "].depthMap", i + 1);
+		//s.use();
+		//s.SetInteger("points[" + std::to_string(i) + "].depthMap", i + 1);
 	}
 }
 PointLight::PointLight(vec3 amb, vec3 diff, vec3 spec, vec3 pos,
@@ -139,9 +139,9 @@ void DirLight::UpdateVecs(Shader& s)
 void setLight()
 {
 	std::vector<glm::vec3> pointPos{
-		glm::vec3(2.0f, 0.0f, -1.0f),
-		glm::vec3(-2.0f, 0.9f, -1.0f),
-		glm::vec3(0.0f, 0.9f, -2.0f)
+		glm::vec3(2.0f, 2.0f, -4.0f),
+		//glm::vec3(-2.0f, 0.9f, -1.0f),
+		//glm::vec3(0.0f, -10.9f, -2.0f)
 	};
 	for (auto& x : pointPos)
 	{
