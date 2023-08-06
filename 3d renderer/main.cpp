@@ -23,9 +23,10 @@ void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
 void ProcessOffset(GLfloat xpos, GLfloat ypos);
 void Input(GLFWwindow* window);
 void UpdatePhong(Shader& shad);
+void UpdateHDR(Shader& shad);
 
-const int WIDTH = 1024;
-const int HEIGHT = 720;
+const int WIDTH = 1440;
+const int HEIGHT = 800;
 Camera cam;
 glm::mat4 projection = glm::mat4(1.0f);
 int main()
@@ -64,12 +65,13 @@ int main()
 	
 	//stbi_set_flip_vertically_on_load(true);
 
-	Shader modelShader("./Shaders/b_phong_no_spec.vs", "./Shaders/b_phong_no_spec.fs");
+	Shader modelShader("./Shaders/blinn-phong.vs", "./Shaders/blinn-phong.fs");
+	Shader sceneShader("./Shaders/b_phong_no_spec.vs", "./Shaders/b_phong_no_spec.fs");
 	Shader skyboxShader("./Shaders/cubeMap.vs", "./Shaders/cubeMap.fs");
 	Shader DepthMapShader("./Shaders/cubeDepth.vs", "./Shaders/cubeDepth.fs", "./Shaders/cubeDepth.gs");
 	Shader baseShader("./Shaders/none.vs", "./Shaders/none.fs");
 	Shader quadShader("./Shaders/Quad.vs", "./Shaders/Quad.fs");
-	//Model Cyborg("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
+	Model Cyborg("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
 	std::vector<GLfloat> skyBox{
 		-1.0f,  1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,
@@ -120,10 +122,9 @@ int main()
 
 	GLuint skyboxMap = loadCubeMapTexture("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\skybox\\");
 	GLuint wood = TextureFromFile("wood.png", "C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources", "texture_diffuse");
-	GLint width{}, height{};
-	glfwGetWindowSize(window, &width, &height);
+	
 	FrameBuffer screenBuff;
-	screenBuff.setDimensions(width, height);
+	screenBuff.setDimensions(WIDTH, HEIGHT);
 	screenBuff.attachColorTex();
 
 
@@ -140,6 +141,7 @@ int main()
 	
 	GLuint ubo = generateUBO();
 	glm::mat4 view(1.0f);
+	GLint width{}, height{};
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -147,10 +149,15 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		glfwGetWindowSize(window, &width, &height);
+		screenBuff.resizeTexture(width, height);
 		screenBuff.bind();
+		glViewport(0, 0, WIDTH, HEIGHT);
+		
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
+		
 		Input(window);
 
 		/*for (auto& light : Light_values::points)
@@ -159,19 +166,24 @@ int main()
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		*/
-		glfwGetWindowSize(window, &width, &height);
-		//glViewport(0, 0, width, height);
+		
 		modelShader.use();
 		UpdatePhong(modelShader);
-		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width/ (GLfloat)height, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(45.0f), (GLfloat)WIDTH/ (GLfloat)HEIGHT, 0.1f, 100.0f);
 		setUboValue(projection, ubo, 0);
 		view = cam.getView();
 		setUboValue(view, ubo, 1);
 		modelShader.SetVector3f("viewPos", cam.getPos());
 		modelShader.SetVector3f("material.specular", glm::vec3(0.5f));
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, wood);
+		glm::mat4 model(1.0f);
+		model = glm::translate(model, glm::vec3(0.0, -1.5, 0.0f));
+		model = glm::scale(model, glm::vec3(0.5f));
+		glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
+		modelShader.SetMatrix4("model", model);
+		modelShader.SetMatrix3("normalMatrix", Normalmat);
+		Cyborg.Draw(modelShader);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, wood);
 		//glActiveTexture(GL_TEXTURE1);
 		//glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[0].cubeMap);
 		/*
@@ -180,19 +192,21 @@ int main()
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[2].cubeMap);
 		*/
-		drawCubes(wood, modelShader);
-		drawPlane(wood, modelShader);
+		//drawCubes(wood, modelShader);
+		//drawPlane(wood, modelShader);
 
-		/*for (auto& x : Light_values::points)
+		for (auto& x : Light_values::points)
 		{
 			baseShader.use();
 			glm::mat4 lightModel(1.0f);
 			lightModel = glm::translate(lightModel, x.position);
 			lightModel = glm::scale(lightModel, glm::vec3(0.2f));
 			baseShader.SetMatrix4("model", lightModel);
+			baseShader.SetVector3f("color", x.diffuse);
+			std::cout << x.diffuse[0] << std::endl;
 			drawLightPos();
 		}
-		*/
+
 		glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
 		view = glm::mat4(glm::mat3(cam.getView()));
@@ -203,11 +217,15 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
+		
 		screenBuff.unbind();
+		glViewport(0, 0, WIDTH, HEIGHT);
+
 		glDisable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT);
 		quadShader.use();
 		screenBuff.bindTex();
+		UpdateHDR(quadShader);
 		drawQuad();
 		
 		SetupUI(&showWindow);
@@ -305,6 +323,12 @@ void UpdatePhong(Shader& shad)
 	Light_values::direct.UpdateVecs(shad);
 	shad.SetFloat("material.shininess", Light_values::shine);
 	shad.SetFloat("gamma", Light_values::gamma);
+}
+
+void UpdateHDR(Shader& shad)
+{
+	shad.SetInteger("hdr", Light_values::hdr);
+	shad.SetFloat("exposure", Light_values::exposure);
 }
 
 
@@ -529,7 +553,7 @@ void drawLightPos()
 		first = false;
 	}
 	lightvao.bind();
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 36);
 }
 
 void drawQuad()
