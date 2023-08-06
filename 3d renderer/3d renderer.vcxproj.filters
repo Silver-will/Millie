@@ -157,12 +157,6 @@
     <None Include="Shaders\cubeMap.fs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\none.fs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\none.vs">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\pbr.fs">
       <Filter>Shaders</Filter>
     </None>
@@ -191,6 +185,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\Quad.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\none.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\none.fs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

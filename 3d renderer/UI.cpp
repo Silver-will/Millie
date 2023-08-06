@@ -189,7 +189,7 @@ void SetupUI(bool* p_open)
             
 
             ImGui::SeparatorText("diffuse");
-            static std::vector<GLfloat> diff{0.3f,0.3f,0.3f};
+            static std::vector<GLfloat> diff{10.0f,10.0f,10.0f };
             ImGui::InputFloat3("R,G,B diff", diff.data());
             direct.diffuse = vec3(diff.at(0), diff.at(1), diff.at(2));
 
@@ -212,6 +212,11 @@ void SetupUI(bool* p_open)
         ImGui::SeparatorText("Gamma correction");
         ImGui::SliderFloat("Gamma", &Light_values::gamma, 2.0, 3.0f);
         ImGui::Spacing();
+        ImGui::SeparatorText("HDR");
+        ImGui::Checkbox("HDR", &Light_values::hdr);
+        ImGui::Spacing();
+        ImGui::SliderFloat("Exposure", &Light_values::exposure, 0.0, 15.0f);
+       
     }
     ImGui::End();
 }

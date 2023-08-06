@@ -84,5 +84,7 @@ namespace Light_values
 	extern std::vector<PointLight> points;
 	extern GLfloat shine;
 	extern GLfloat gamma;
+	extern bool hdr;
+	extern GLfloat exposure;
 }
 #endif

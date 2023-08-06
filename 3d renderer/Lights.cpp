@@ -139,18 +139,18 @@ void DirLight::UpdateVecs(Shader& s)
 void setLight()
 {
 	std::vector<glm::vec3> pointPos{
-		glm::vec3(2.0f, 2.0f, -4.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
 		//glm::vec3(-2.0f, 0.9f, -1.0f),
 		//glm::vec3(0.0f, -10.9f, -2.0f)
 	};
 	for (auto& x : pointPos)
 	{
-		Light_values::points.push_back(PointLight(vec3(0.15), vec3(0.4), vec3(1.0), x, 1.0f, 0.22f, 0.0019f));
+		Light_values::points.push_back(PointLight(vec3(0.15), vec3(15.0), vec3(1.0), x, 1.0f, 0.7f, 1.8f));
 	}
 	std::vector<glm::vec3> spotPos
 	{
-		glm::vec3(0.0f, 0.0f, -3.0f),
-		glm::vec3(0.0f, -0.5f, -2.0f),
+		//glm::vec3(0.0f, 0.0f, -3.0f),
+		//glm::vec3(0.0f, -0.5f, -2.0f),
 		//glm::vec3(2.0f, 0.0f, -3.0f),
 		//glm::vec3(0.0f, -0.5f, -2.0f)
 	};
@@ -175,9 +175,11 @@ void PointLight::unbindFramebuffer()
 
 namespace Light_values
 {
-	DirLight direct(vec3(0.2f), vec3(0.3f), vec3(1.0f), vec3(0.0f, -1.0f, -0.5f));
+	DirLight direct(vec3(0.2f), vec3(400.0f), vec3(400.0f), vec3(0.0f, -1.0f, -0.5f));
 	std::vector<SpotLight> spots{};
 	std::vector<PointLight> points{};
 	GLfloat shine{ 128.0f};
 	GLfloat gamma{ 2.2f };
+	GLfloat exposure{1.0f};
+	bool hdr{ true };
 }

@@ -2,8 +2,8 @@
 in VS_OUT
 {
     vec2 Tex;
-    vec3 Norm;
     vec3 FragPos;
+    mat3 TBN;
 } fs_in;
 
 struct Material
@@ -77,6 +77,7 @@ vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir);
 float ShadowCalculation(vec3 fragPos, PointLight light);
 
+
 vec3 gridSamplingDisk[20] = vec3[]
 (
    vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1), 
@@ -88,9 +89,13 @@ vec3 gridSamplingDisk[20] = vec3[]
 
 void main()
 {
-    vec3 norm = normalize(fs_in.Norm);
+    vec3 norm = texture(material.texture_normal1, fs_in.Tex).rgb;
+    norm = norm * 2.0 - 1.0;
+    norm = normalize(fs_in.TBN * norm);
+
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-    vec3 Output = CalculateDir(direct, norm, viewDir);
+    vec3 Output = vec3(0.0f);
+    //vec3 Output = CalculateDir(direct, norm, viewDir);
     for(int i = 0; i < point_count; i++)
     {
       Output += CalculatePoints(points[i], norm, fs_in.FragPos, viewDir);
