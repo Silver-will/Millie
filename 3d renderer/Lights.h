@@ -85,6 +85,7 @@ namespace Light_values
 	extern GLfloat shine;
 	extern GLfloat gamma;
 	extern bool hdr;
+	extern bool bloom;
 	extern GLfloat exposure;
 }
 #endif

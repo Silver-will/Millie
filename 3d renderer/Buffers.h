@@ -10,15 +10,17 @@ void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off);
 
 struct FrameBuffer
 {
-	FrameBuffer(GLint ColorAttachNo = 0);
+	FrameBuffer(GLint ColorAttachNo = 1);
 	~FrameBuffer();
 	void attachColorTex();
 	void bind();
 	void unbind();
-	void bindTex();
+	void bindTex(GLint index);
 	void setDimensions(GLuint width, GLuint height);
 	void resizeTexture(GLuint width = 0.0f, GLuint height = 0.0f);
+	void checkComplete();
 	void setMRTs();
+	std::vector<GLuint>attachments;
 private:
 	GLuint FBO;
 	GLuint RBO;
@@ -28,6 +30,5 @@ private:
 	GLuint textureWidth;
 	GLuint textureHeight;
 	GLuint ColorTexNo;
-	std::vector<GLuint>attachments;
 };
 #endif

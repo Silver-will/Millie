@@ -1,5 +1,6 @@
 #include "Buffers.h"
 #include "General_utility.h"
+#include<iostream>
 FrameBuffer::FrameBuffer(GLint ColorAttachNo):textureWidth{1440}, textureHeight{800}
 {
 	this->ColorTexNo = ColorAttachNo;
@@ -30,9 +31,16 @@ void FrameBuffer::unbind()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void FrameBuffer::bindTex()
+void FrameBuffer::bindTex(GLint index)
 {
-	glBindTexture(GL_TEXTURE_2D, this->ColorAttachment);
+	if (index <= attachments.size())
+	{
+		glBindTexture(GL_TEXTURE_2D, this->attachments[index]);
+	}
+	else
+	{
+		Log("Attachment index specified does not exist");
+	}
 }
 
 void FrameBuffer::setDimensions(GLuint width, GLuint height)
@@ -48,7 +56,8 @@ void FrameBuffer::resizeTexture(GLuint width, GLuint height)
 }
 void FrameBuffer::attachColorTex()
 {
-	glGenTextures(ColorTexNo, this->attachments.data());
+	//could change colortexno here to attachments.size()
+	glGenTextures(ColorTexNo, attachments.data());
 	for (size_t i = 0; i < ColorTexNo; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, this->attachments[i]);
@@ -56,9 +65,7 @@ void FrameBuffer::attachColorTex()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->attachments[i], 0);
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-			Log("FRAMEBUFFER IS NOT COMPLETE");
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
 	}
 }
 
@@ -82,9 +89,17 @@ void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off)
 void FrameBuffer::setMRTs()
 {
 	std::vector<GLuint> targets(ColorTexNo);
+	std::cout << targets.size() << std::endl;
 	for (size_t i = 0; i < targets.size(); i++)
 	{
 		targets[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
+
 	glDrawBuffers(ColorTexNo, targets.data());
+}
+
+void FrameBuffer::checkComplete()
+{
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		Log("FRAMEBUFFER IS NOT COMPLETE");
 }

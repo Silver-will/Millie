@@ -1,4 +1,7 @@
 #version 450 core
+layout (location = 0)out vec4 FragColor;
+layout (location = 1)out vec4 BrightColor;
+
 in VS_OUT
 {
     vec2 Tex;
@@ -68,9 +71,7 @@ uniform Material material;
 uniform int point_count;
 uniform int spot_count;
 uniform vec3 viewPos;
-uniform float gamma;
 uniform float far_plane;
-out vec4 fragColor;
 
 vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir);
 vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
@@ -94,8 +95,7 @@ void main()
     norm = normalize(fs_in.TBN * norm);
 
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-    vec3 Output = vec3(0.0f);
-    //vec3 Output = CalculateDir(direct, norm, viewDir);
+    vec3 Output = CalculateDir(direct, norm, viewDir);
     for(int i = 0; i < point_count; i++)
     {
       Output += CalculatePoints(points[i], norm, fs_in.FragPos, viewDir);
@@ -104,8 +104,13 @@ void main()
     {
       Output += CalculateSpots(spots[i], norm, fs_in.FragPos, viewDir);
     }
-    Output = pow(Output, vec3(1.0/gamma));
-    fragColor = vec4(Output, 1.0f);
+
+    float brightness = dot(Output, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0) 
+        BrightColor = vec4(Output, 1.0f);
+    else 
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+    FragColor = vec4(Output, 1.0f);
 }
 
 vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir)

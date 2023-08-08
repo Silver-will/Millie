@@ -66,7 +66,6 @@ uniform Material material;
 uniform int point_count;
 uniform int spot_count;
 uniform vec3 viewPos;
-uniform float gamma;
 uniform float far_plane;
 
 out vec4 fragColor;
@@ -99,7 +98,6 @@ void main()
     //{
       //Output += CalculateSpots(spots[i], norm, fs_in.FragPos, viewDir);
     //}
-    Output = pow(Output, vec3(1.0/gamma));
     fragColor = vec4(Output, 1.0f);
 }
 

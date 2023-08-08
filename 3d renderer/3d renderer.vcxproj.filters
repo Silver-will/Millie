@@ -193,6 +193,12 @@
     <None Include="Shaders\none.fs">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\bloom_blur.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\bloom_blur.fs">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\imgui.natvis">
