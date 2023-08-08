@@ -215,8 +215,11 @@ void SetupUI(bool* p_open)
         ImGui::SeparatorText("HDR");
         ImGui::Checkbox("HDR", &Light_values::hdr);
         ImGui::Spacing();
+        ImGui::SeparatorText("Bloom");
+        ImGui::Checkbox("Bloom", &Light_values::bloom);
+        ImGui::Spacing();
         ImGui::SliderFloat("Exposure", &Light_values::exposure, 0.0, 15.0f);
-       
+        ImGui::Spacing();
     }
     ImGui::End();
 }

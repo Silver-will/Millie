@@ -149,10 +149,10 @@ void setLight()
 	}
 	std::vector<glm::vec3> spotPos
 	{
-		//glm::vec3(0.0f, 0.0f, -3.0f),
-		//glm::vec3(0.0f, -0.5f, -2.0f),
-		//glm::vec3(2.0f, 0.0f, -3.0f),
-		//glm::vec3(0.0f, -0.5f, -2.0f)
+		glm::vec3(0.0f, 0.0f, -3.0f),
+		glm::vec3(0.0f, -0.5f, -2.0f),
+		glm::vec3(2.0f, 0.0f, -3.0f),
+		glm::vec3(0.0f, -0.5f, -2.0f)
 	};
 
 	for (size_t i = 0; i < spotPos.size(); i += 2)
@@ -175,11 +175,12 @@ void PointLight::unbindFramebuffer()
 
 namespace Light_values
 {
-	DirLight direct(vec3(0.2f), vec3(400.0f), vec3(400.0f), vec3(0.0f, -1.0f, -0.5f));
+	DirLight direct(vec3(0.2f), vec3(20.0f), vec3(1.0f), vec3(0.0f, -1.0f, -0.5f));
 	std::vector<SpotLight> spots{};
 	std::vector<PointLight> points{};
 	GLfloat shine{ 128.0f};
 	GLfloat gamma{ 2.2f };
 	GLfloat exposure{1.0f};
 	bool hdr{ true };
+	bool bloom{ true };
 }
