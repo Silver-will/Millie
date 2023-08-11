@@ -37,9 +37,6 @@ struct PointLight
     float constant;
     float linear;
     float quadratic;
-
-    samplerCube depthMap;
-    bool shadow;
 };
 
 struct SpotLight
@@ -57,8 +54,6 @@ struct SpotLight
     float constant;
     float linear;
     float quadratic;
-
-    bool shadow;
 };
 
 #define MAX_POINT_LIGHT 50
@@ -76,17 +71,6 @@ uniform float far_plane;
 vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir);
 vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir);
-float ShadowCalculation(vec3 fragPos, PointLight light);
-
-
-vec3 gridSamplingDisk[20] = vec3[]
-(
-   vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1), 
-   vec3(1, 1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
-   vec3(1, 1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1, 1,  0),
-   vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
-   vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
-);
 
 void main()
 {
@@ -180,27 +164,4 @@ vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     
     
     return (ambient + diffuse + specular);
-}
-
-float ShadowCalculation(vec3 fragPos, PointLight light)
-{
-    vec3 fragToLight = fragPos - light.position;
-
-    float currentDepth = length(fragToLight);
-    float shadow = 0.0f;
-    float bias = 0.05f;
-    int samples = 20;
-    float viewDistance = length(viewPos - light.position);
-    float diskRadius = (1.0 + (viewDistance/ far_plane)) /  25.0;
-    for(int i = 0; i < samples; i++)
-    {
-        float closestDepth = texture(light.depthMap, fragToLight + gridSamplingDisk[i] * diskRadius).r;
-        closestDepth *= far_plane;
-        if(currentDepth - bias > closestDepth)
-            shadow += 1.0;
-    }
-    shadow /= float(samples);
-
-    return shadow;
-
 }

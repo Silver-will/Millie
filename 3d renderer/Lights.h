@@ -24,12 +24,10 @@ private:
 struct PointLight : public Light
 {
 	PointLight(vec3 amb, vec3 diff, vec3 spec, vec3 pos,
-		GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f, bool shad = false);
+		GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f);
 	PointLight();
 	void setAttenuation(GLfloat& L, GLfloat& C, GLfloat& Q) override;
 	void UpdateVecs(Shader& s, size_t ind) override;
-	void bindFramebuffer();
-	void unbindFramebuffer();
 	vec3 position;
 	vec3 ambient;
 	vec3 diffuse;
@@ -39,16 +37,14 @@ struct PointLight : public Light
 	GLfloat linear;
 	GLfloat quadratic;
 
-	GLuint cubeMap{};
-	GLuint depthFBO{};
-	bool shadow;
+	GLuint depthFBO;
 	vec3 lastPosition;
 };
 
 struct SpotLight : public Light
 {
 	SpotLight(vec3 amb, vec3 diff, vec3 spec, vec3 dir, vec3 pos, GLfloat cut = 0.0f,
-		GLfloat out = 0.0f, GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f, bool shad = false);
+		GLfloat out = 0.0f, GLfloat con = 0.0f, GLfloat line = 0.0f, GLfloat quad = 0.0f);
 	SpotLight();
 	void setAttenuation(GLfloat& L, GLfloat& C, GLfloat& Q) override;
 	void UpdateVecs(Shader& s, size_t ind) override;
@@ -65,7 +61,6 @@ struct SpotLight : public Light
 
 	GLfloat cutOff;
 	GLfloat OuterCutoff;
-	bool shadow;
 };
 
 struct DirLight

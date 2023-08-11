@@ -199,10 +199,18 @@
     <None Include="Shaders\bloom_blur.fs">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\light_bloom.fs">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\imgui.natvis">
       <Filter>imgui</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Text.txt">
+      <Filter>Shaders</Filter>
+    </Text>
   </ItemGroup>
 </Project>

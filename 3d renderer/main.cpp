@@ -12,7 +12,7 @@
 #include"Buffers.h"
 
 GLuint loadCubeMapTexture(string directory);
-void drawPointShadow(PointLight& light, Shader& s, GLuint& tex);
+//void drawPointShadow(PointLight& light, Shader& s, GLuint& tex);
 void drawLightPos();
 void drawQuad();
 void drawPlane(GLuint& Tex, Shader& s);
@@ -68,10 +68,10 @@ int main()
 	Shader modelShader("./Shaders/blinn-phong.vs", "./Shaders/blinn-phong.fs");
 	//Shader sceneShader("./Shaders/b_phong_no_spec.vs", "./Shaders/b_phong_no_spec.fs");
 	Shader skyboxShader("./Shaders/cubeMap.vs", "./Shaders/cubeMap.fs");
-	Shader DepthMapShader("./Shaders/cubeDepth.vs", "./Shaders/cubeDepth.fs", "./Shaders/cubeDepth.gs");
-	Shader baseShader("./Shaders/none.vs", "./Shaders/none.fs");
+	//Shader DepthMapShader("./Shaders/cubeDepth.vs", "./Shaders/cubeDepth.fs", "./Shaders/cubeDepth.gs");
+	Shader lightShader("./Shaders/none.vs", "./Shaders/light_bloom.fs");
 	Shader quadShader("./Shaders/Quad.vs", "./Shaders/Quad.fs");
-	Shader bloomShader("./Shaders/bloom_blur.vs", "./Shaders/bloom_blur.fs");
+	Shader blurShader("./Shaders/bloom_blur.vs", "./Shaders/bloom_blur.fs");
 	Model Cyborg("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
 	std::vector<GLfloat> skyBox{
 		-1.0f,  1.0f, -1.0f,
@@ -120,9 +120,10 @@ int main()
 	VAO skyvao;
 	skyvao.GenerateBuffer("VERTEX", skyBox, skyOffset);
 	skyvao.unbind();
-
+	
+	//load in textures
 	GLuint skyboxMap = loadCubeMapTexture("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\skybox\\");
-	GLuint wood = TextureFromFile("wood.png", "C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources", "texture_diffuse");
+	//GLuint wood = TextureFromFile("wood.png", "C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources", "texture_diffuse");
 	
 	//Hdr FrameBuffer
 	FrameBuffer screenBuff(2);
@@ -131,32 +132,27 @@ int main()
 	screenBuff.checkComplete();
 	screenBuff.unbind();
 
-	//Ping-pong FrameBuffer
-	std::vector<FrameBuffer> PingPongBuffers{};
-	for (size_t i = 0; i < 2; i++)
+	//Ping-pong FrameBuffers
+	std::vector<FrameBuffer> PingPongBuffers{FrameBuffer(1), FrameBuffer(1)};
+	for (size_t i = 0; i < PingPongBuffers.size(); i++)
 	{
-		PingPongBuffers.emplace_back(FrameBuffer(1));
-		PingPongBuffers.at(i).attachColorTex();
-		PingPongBuffers.at(i).checkComplete();
-		PingPongBuffers.at(i).unbind();
+		PingPongBuffers[i].attachColorTex();
+		PingPongBuffers[i].checkComplete();
+		PingPongBuffers[i].unbind();
 	}
-	modelShader.use();
-	modelShader.SetInteger("material.texture_diffuse1", 0);
-	modelShader.SetInteger("depth", 1);
 
 	skyboxShader.use();
 	skyboxShader.SetInteger("skybox", 0);
 	
+	blurShader.use();
+	blurShader.SetInteger("image", 0);
+
 	quadShader.use();
 	quadShader.SetInteger("colorTex", 0);
 	quadShader.SetInteger("bloomBlur", 1);
-
-	bloomShader.use();
-	bloomShader.SetInteger("image", 0);
 	setLight();
+	
 	generatePointFBO(modelShader);
-	
-	
 	GLuint ubo = generateUBO();
 	glm::mat4 view(1.0f);
 	GLint width{}, height{};
@@ -168,7 +164,7 @@ int main()
 		ImGui::NewFrame();
 
 		glfwGetWindowSize(window, &width, &height);
-		screenBuff.resizeTexture(width, height);
+		//First renderpass to offscreen framebuffer
 		screenBuff.bind();
 		glViewport(0, 0, WIDTH, HEIGHT);
 		glEnable(GL_DEPTH_TEST);
@@ -178,7 +174,7 @@ int main()
 		Input(window);
 		modelShader.use();
 		UpdatePhong(modelShader);
-		projection = glm::perspective(glm::radians(45.0f), (GLfloat)WIDTH/ (GLfloat)HEIGHT, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width/ (GLfloat)height, 0.1f, 100.0f);
 		setUboValue(projection, ubo, 0);
 		view = cam.getView();
 		setUboValue(view, ubo, 1);
@@ -193,14 +189,19 @@ int main()
 		Cyborg.Draw(modelShader);
 		for (auto& x : Light_values::points)
 		{
-			baseShader.use();
+			lightShader.use();
 			glm::mat4 lightModel(1.0f);
 			lightModel = glm::translate(lightModel, x.position);
 			lightModel = glm::scale(lightModel, glm::vec3(0.2f));
-			baseShader.SetMatrix4("model", lightModel);
-			baseShader.SetVector3f("color", x.diffuse);
+			lightShader.SetMatrix4("model", lightModel);
+			lightShader.SetVector3f("lightColor", x.diffuse);
 			drawLightPos();
 		}
+		/*PingPongBuffers[1].bind();
+		Cyborg.Draw(modelShader);
+		PingPongBuffers[1].unbind();
+		*/
+		//change depth test to less than or equal to avoid skybox fragments being disgarded
 		glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
 		view = glm::mat4(glm::mat3(cam.getView()));
@@ -213,50 +214,35 @@ int main()
 		glDepthFunc(GL_LESS);
 
 		screenBuff.unbind();
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_2D, wood);
-		//glActiveTexture(GL_TEXTURE1);
-		//glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[0].cubeMap);
-		/*
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[1].cubeMap);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, Light_values::points[2].cubeMap);
-		*/
-		//drawCubes(wood, modelShader);
-		//drawPlane(wood, modelShader);
 
-		/*for (auto& light : Light_values::points)
-		{
-			drawPointShadow(light, DepthMapShader, wood);
-		}
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		*/
 
+		//second render pass to apply a gaussian blue
 		bool horizontal = true, first_iteration = true;
 		GLuint amount = 10;
-		bloomShader.use();
+		blurShader.use();
 		for (size_t i = 0; i < amount; i++)
 		{
+			//bind 2nd ping-pong buffer
 			PingPongBuffers[horizontal].bind();
-			bloomShader.SetInteger("horizontal", horizontal);
-			glBindTexture(GL_TEXTURE_2D, first_iteration ? screenBuff.attachments[1]:
+			glViewport(0, 0, WIDTH, HEIGHT);
+			blurShader.SetInteger("horizontal", horizontal);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, first_iteration ? screenBuff.attachments[1] :
 			PingPongBuffers[!horizontal].attachments[0]);
 			drawQuad();
+			PingPongBuffers[horizontal].unbind();
 			horizontal != horizontal;
 			if (first_iteration)
 				first_iteration = false;
 		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
 
-		glViewport(0, 0, WIDTH, HEIGHT);
-		glDisable(GL_DEPTH_TEST);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		quadShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		screenBuff.bindTex(0);
 		glActiveTexture(GL_TEXTURE1);
-		PingPongBuffers[!horizontal].bind();
+		PingPongBuffers[!horizontal].bindTex(0);
 		UpdateHDR(quadShader);
 		drawQuad();
 		
@@ -429,7 +415,7 @@ void drawPlane(GLuint& Tex, Shader& s)
 		std::vector<GLint> planeOffset{ 3,3,2 };
 		planevao.GenerateBuffer("VERTEX", planeVertices, planeOffset);
 		first = false;	
-		std::cout << "cruise" << std::endl;
+
 	}
 	planevao.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -501,7 +487,7 @@ void drawCubes(GLuint& Tex, Shader& s)
 	cubevao.unbind();
 }
 
-void drawPointShadow(PointLight& light,Shader& s, GLuint& tex)
+/*void drawPointShadow(PointLight& light, Shader& s, GLuint& tex)
 {
 	static const GLfloat nearPlane = 1.0f;
 	static const GLfloat farPlane = 25.0f;
@@ -531,6 +517,7 @@ void drawPointShadow(PointLight& light,Shader& s, GLuint& tex)
 	drawPlane(tex, s);
 	light.unbindFramebuffer();
 }
+*/
 
 void drawLightPos()
 {
