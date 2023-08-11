@@ -189,6 +189,7 @@
     <None Include="Shaders\cubeDepth.vs" />
     <None Include="Shaders\cubeMap.fs" />
     <None Include="Shaders\cubeMap.vs" />
+    <None Include="Shaders\light_bloom.fs" />
     <None Include="Shaders\none.fs" />
     <None Include="Shaders\none.vs" />
     <None Include="Shaders\Quad.fs" />
@@ -198,6 +199,9 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\imgui.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Text.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

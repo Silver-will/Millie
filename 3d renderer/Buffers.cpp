@@ -1,9 +1,9 @@
 #include "Buffers.h"
 #include "General_utility.h"
 #include<iostream>
-FrameBuffer::FrameBuffer(GLint ColorAttachNo):textureWidth{1440}, textureHeight{800}
+FrameBuffer::FrameBuffer(GLuint ColorAttachNo):textureWidth{1440}, textureHeight{800}, 
+ColorTexNo{ColorAttachNo}
 {
-	this->ColorTexNo = ColorAttachNo;
 	this->attachments.resize(ColorAttachNo);
 	//Framebuffer set up
 	glGenFramebuffers(1, &this->FBO);
@@ -14,6 +14,15 @@ FrameBuffer::FrameBuffer(GLint ColorAttachNo):textureWidth{1440}, textureHeight{
 	glBindRenderbuffer(GL_RENDERBUFFER, this->RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1440, 800);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, this->RBO);
+}
+FrameBuffer::FrameBuffer(GLuint ColorAttachNo, bool NR) :textureWidth{ 1440 }, textureHeight{ 800 },
+ColorTexNo{ ColorAttachNo }
+{
+	this->attachments.resize(ColorAttachNo);
+	std::cout << attachments.size() << std::endl;
+	//Framebuffer set up
+	glGenFramebuffers(1, &this->FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, this->FBO);
 }
 
 FrameBuffer::~FrameBuffer()
@@ -33,7 +42,7 @@ void FrameBuffer::unbind()
 
 void FrameBuffer::bindTex(GLint index)
 {
-	if (index <= attachments.size())
+	if (index < attachments.size())
 	{
 		glBindTexture(GL_TEXTURE_2D, this->attachments[index]);
 	}
@@ -57,7 +66,7 @@ void FrameBuffer::resizeTexture(GLuint width, GLuint height)
 void FrameBuffer::attachColorTex()
 {
 	//could change colortexno here to attachments.size()
-	glGenTextures(ColorTexNo, attachments.data());
+	glGenTextures(ColorTexNo, &attachments[0]);
 	for (size_t i = 0; i < ColorTexNo; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, this->attachments[i]);
@@ -88,11 +97,9 @@ void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off)
 
 void FrameBuffer::setMRTs()
 {
-	std::vector<GLuint> targets(ColorTexNo);
-	std::cout << targets.size() << std::endl;
-	for (size_t i = 0; i < targets.size(); i++)
+	for (size_t i = 0; i < ColorTexNo; i++)
 	{
-		targets[i] = GL_COLOR_ATTACHMENT0 + i;
+		targets.push_back(GL_COLOR_ATTACHMENT0 + i);
 	}
 
 	glDrawBuffers(ColorTexNo, targets.data());
@@ -101,5 +108,7 @@ void FrameBuffer::setMRTs()
 void FrameBuffer::checkComplete()
 {
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
 		Log("FRAMEBUFFER IS NOT COMPLETE");
+	}
 }
