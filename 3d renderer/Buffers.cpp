@@ -44,7 +44,7 @@ void FrameBuffer::bindTex(GLint index)
 {
 	if (index < attachments.size())
 	{
-		glBindTexture(GL_TEXTURE_2D, this->attachments[index]);
+		glBindTexture(GL_TEXTURE_2D, attachments[index]);
 	}
 	else
 	{
@@ -61,20 +61,21 @@ void FrameBuffer::setDimensions(GLuint width, GLuint height)
 void FrameBuffer::resizeTexture(GLuint width, GLuint height)
 {
 	setDimensions(width, height);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->textureWidth, this->textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->textureWidth, this->textureHeight, 0, GL_RGBA, GL_FLOAT, NULL);
 }
 void FrameBuffer::attachColorTex()
 {
 	//could change colortexno here to attachments.size()
-	glGenTextures(ColorTexNo, &attachments[0]);
+	glGenTextures(ColorTexNo, attachments.data());
 	for (size_t i = 0; i < ColorTexNo; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, this->attachments[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, this->textureWidth, this->textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, this->textureWidth, this->textureHeight, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->attachments[i], 0);
-	
 	}
 }
 

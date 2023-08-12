@@ -123,7 +123,7 @@ int main()
 	
 	//load in textures
 	GLuint skyboxMap = loadCubeMapTexture("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\skybox\\");
-	//GLuint wood = TextureFromFile("wood.png", "C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources", "texture_diffuse");
+	GLuint wood = TextureFromFile("wood.png", "C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources", "texture_diffuse");
 	
 	//Hdr FrameBuffer
 	FrameBuffer screenBuff(2);
@@ -133,12 +133,32 @@ int main()
 	screenBuff.unbind();
 
 	//Ping-pong FrameBuffers
-	std::vector<FrameBuffer> PingPongBuffers{FrameBuffer(1), FrameBuffer(1)};
+	/*std::vector<FrameBuffer> PingPongBuffers{FrameBuffer(1), FrameBuffer(1)};
 	for (size_t i = 0; i < PingPongBuffers.size(); i++)
 	{
 		PingPongBuffers[i].attachColorTex();
 		PingPongBuffers[i].checkComplete();
 		PingPongBuffers[i].unbind();
+	}
+	*/
+
+	unsigned int pingpongFBO[2];
+	unsigned int pingpongColorbuffers[2];
+	glGenFramebuffers(2, pingpongFBO);
+	glGenTextures(2, pingpongColorbuffers);
+	for (unsigned int i = 0; i < 2; i++)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+		glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongColorbuffers[i], 0);
+		// also check if framebuffers are complete (no need for depth buffer)
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			std::cout << "Framebuffer not complete!" << std::endl;
 	}
 
 	skyboxShader.use();
@@ -152,7 +172,6 @@ int main()
 	quadShader.SetInteger("bloomBlur", 1);
 	setLight();
 	
-	generatePointFBO(modelShader);
 	GLuint ubo = generateUBO();
 	glm::mat4 view(1.0f);
 	GLint width{}, height{};
@@ -169,12 +188,12 @@ int main()
 		glViewport(0, 0, WIDTH, HEIGHT);
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
-		
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
 		Input(window);
 		modelShader.use();
 		UpdatePhong(modelShader);
-		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width/ (GLfloat)height, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 		setUboValue(projection, ubo, 0);
 		view = cam.getView();
 		setUboValue(view, ubo, 1);
@@ -186,6 +205,7 @@ int main()
 		glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
 		modelShader.SetMatrix4("model", model);
 		modelShader.SetMatrix3("normalMatrix", Normalmat);
+
 		Cyborg.Draw(modelShader);
 		for (auto& x : Light_values::points)
 		{
@@ -197,10 +217,6 @@ int main()
 			lightShader.SetVector3f("lightColor", x.diffuse);
 			drawLightPos();
 		}
-		/*PingPongBuffers[1].bind();
-		Cyborg.Draw(modelShader);
-		PingPongBuffers[1].unbind();
-		*/
 		//change depth test to less than or equal to avoid skybox fragments being disgarded
 		glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
@@ -212,37 +228,49 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
-
 		screenBuff.unbind();
 
+		//glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[0]);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//Cyborg.Draw(modelShader);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		//second render pass to apply a gaussian blue
+		//second render pass to apply a gaussian blur
+
 		bool horizontal = true, first_iteration = true;
 		GLuint amount = 10;
 		blurShader.use();
-		for (size_t i = 0; i < amount; i++)
+
+		//bind 2nd ping-pong buffer
+		if (Light_values::bloom)
 		{
-			//bind 2nd ping-pong buffer
-			PingPongBuffers[horizontal].bind();
-			glViewport(0, 0, WIDTH, HEIGHT);
-			blurShader.SetInteger("horizontal", horizontal);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, first_iteration ? screenBuff.attachments[1] :
-			PingPongBuffers[!horizontal].attachments[0]);
-			drawQuad();
-			PingPongBuffers[horizontal].unbind();
-			horizontal != horizontal;
-			if (first_iteration)
-				first_iteration = false;
+			for (size_t i = 0; i < amount; i++)
+			{
+				glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+				blurShader.SetInteger("horizontal", horizontal);
+				if (first_iteration)
+				{
+					screenBuff.bindTex(1);
+				}
+				else
+				{
+					glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
+				}
+				drawQuad();
+				horizontal = !horizontal;
+				if (first_iteration)
+					first_iteration = false;
+			}
 		}
-		
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		quadShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		screenBuff.bindTex(0);
 		glActiveTexture(GL_TEXTURE1);
-		PingPongBuffers[!horizontal].bindTex(0);
+		glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
 		UpdateHDR(quadShader);
 		drawQuad();
 		
@@ -487,38 +515,6 @@ void drawCubes(GLuint& Tex, Shader& s)
 	cubevao.unbind();
 }
 
-/*void drawPointShadow(PointLight& light, Shader& s, GLuint& tex)
-{
-	static const GLfloat nearPlane = 1.0f;
-	static const GLfloat farPlane = 25.0f;
-	static std::vector<glm::mat4> transforms;
-	static const GLfloat WIDTH = 1024, HEIGHT = 1024;
-	if (light.lastPosition != light.position)
-	{
-		transforms.clear();
-		static glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), WIDTH/ HEIGHT, nearPlane, farPlane);
-		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
-		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-		transforms.push_back(shadowProj * glm::lookAt(light.position, light.position + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-		light.lastPosition = light.position;
-	}
-	glViewport(0, 0, WIDTH, HEIGHT);
-	light.bindFramebuffer();
-	glClear(GL_DEPTH_BUFFER_BIT);
-	s.use();
-	for (size_t i = 0; i < 6; i++)
-		s.SetMatrix4("shadowMatrices[" + std::to_string(i) + "]", transforms[i]);
-	s.SetFloat("far_plane", farPlane);
-	s.SetVector3f("lightPos", light.position);
-	//drawCubes(tex, s);
-	drawPlane(tex, s);
-	light.unbindFramebuffer();
-}
-*/
-
 void drawLightPos()
 {
 	static bool first = true;
@@ -573,7 +569,7 @@ void drawLightPos()
 		first = false;
 	}
 	lightvao.bind();
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 36);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void drawQuad()
