@@ -187,7 +187,7 @@ void SetupUI(bool* p_open)
             
 
             ImGui::SeparatorText("diffuse");
-            static std::vector<GLfloat> diff{10.0f,10.0f,10.0f };
+            static std::vector<GLfloat> diff{0.5f,0.5f,0.5f};
             ImGui::InputFloat3("R,G,B diff", diff.data());
             direct.diffuse = vec3(diff.at(0), diff.at(1), diff.at(2));
 

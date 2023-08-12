@@ -118,7 +118,7 @@ void setLight()
 	};
 	for (auto& pos : pointPos)
 	{
-		Light_values::points.push_back(PointLight(vec3(0.15), vec3(15.0), vec3(1.0), pos, 1.0f, 0.7f, 1.8f));
+		Light_values::points.push_back(PointLight(vec3(0.15), vec3(3.0), vec3(1.0), pos, 1.0f, 0.7f, 1.8f));
 	}
 	std::vector<glm::vec3> spotPos
 	{
@@ -138,12 +138,12 @@ void setLight()
 
 namespace Light_values
 {
-	DirLight direct(vec3(0.2f), vec3(20.0f), vec3(1.0f), vec3(0.0f, -1.0f, -0.5f));
+	DirLight direct(vec3(0.2f), vec3(0.5f), vec3(1.0f), vec3(0.0f, -1.0f, -0.5f));
 	std::vector<SpotLight> spots{};
 	std::vector<PointLight> points{};
 	GLfloat shine{ 128.0f};
 	GLfloat gamma{ 2.2f };
 	GLfloat exposure{1.0f};
 	bool hdr{ true };
-	bool bloom{ true };
+	bool bloom{ false };
 }

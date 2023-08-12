@@ -13,8 +13,9 @@ void main()
 {             
     vec3 col = texture(colorTex, TexCoords).rgb;
     vec3 bloomCol = texture(bloomBlur, TexCoords).rgb;
-    //col += bloom ? bloomCol : vec3(0.0f);
-    col = hdr ? vec3(1.0) - exp(-col * exposure) : col;
-    col = pow(col, vec3(1.0/gamma));
-    FragColor = vec4(col, 1.0f);
+    if(bloom)
+    col += bloomCol;
+    vec3 result = hdr ? vec3(1.0) - exp(-col * exposure) : col;
+    result = pow(result, vec3(1.0/gamma));
+    FragColor = vec4(result, 1.0f);
 }
