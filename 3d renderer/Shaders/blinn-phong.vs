@@ -9,6 +9,7 @@ out VS_OUT
 	vec2 Tex;
 	vec3 FragPos;
 	mat3 TBN;
+	mat4 viewOut;
 } vs_out;
 
 layout (std140, binding = 0) uniform Matrices
@@ -31,5 +32,6 @@ void main()
 	vec3 B = cross(N, T);
 
 	vs_out.TBN = mat3(T,B,N);
+	vs_out.viewOut = view;
 	gl_Position = proj * view * vec4(vs_out.FragPos, 1.0);
 }

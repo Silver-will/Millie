@@ -6,6 +6,7 @@ in VS_OUT
     vec2 Tex;
     vec3 FragPos;
     mat3 TBN;
+    mat4 viewOut;
 } fs_in;
 
 struct Material
@@ -65,11 +66,22 @@ uniform Material material;
 uniform int point_count;
 uniform int spot_count;
 uniform vec3 viewPos;
-uniform float far_plane;
+uniform bool shadow;
 
+uniform sampler2DArray shadowMap;
+uniform float far_plane;
+uniform float cascadePlaneDistances[16];
+uniform int cascadeCount;
+
+float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal);
 vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir);
 vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir);
+
+layout(std140, binding = 1) uniform LightMatrices
+{
+	mat4 LightMatrices[16];
+}
 
 void main()
 {
@@ -125,13 +137,15 @@ vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir)
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(halfwayDir, normal), 0.0), material.shininess);
     
+    //vec3 color = vec3(texture(material.texture_diffuse1, fs_in.Tex)).rgb
     vec3 ambient = light.ambient * vec3(texture(material.texture_diffuse1, fs_in.Tex)).rgb;
-
     vec3 diffuse = light.diffuse * diff * vec3(texture(material.texture_diffuse1, fs_in.Tex)).rgb;
-
     vec3 specular = light.specular * spec * vec3(texture(material.texture_specular1, fs_in.Tex)).rgb;
 
-    return (ambient + diffuse + specular);
+    float shadowVal = shadow ? ShadowCalculation(fs_in.FragPos, normal) : 0.0f;
+   
+
+    return (ambient + (1.0 - shadowVal) * (diffuse + specular));
 }
 
 vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
@@ -159,4 +173,64 @@ vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     
     
     return (ambient + diffuse + specular);
+}
+
+float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal)
+{
+    vec4 fragPosViewSpace = fs_in.viewOut * vec4(fragPosWorldSpace,1.0f);
+
+    float depthValue = abs(fragPosViewSpace.z);
+
+    int layer = -1;
+    for(int i = 0; i < cascadeCount; i++)
+    {
+        if(depthValue < cascadePlaneDistance[i])
+        {
+            layer = i;
+            break;
+        }
+    }
+    if(layer == -1)
+    {
+        layer = cascadeCount;
+    }
+
+    vec4 fragPosLightSpace = lightSpaceMatrix[layer] * vec4(fragPosWorldSpace, 1.0f);
+
+    vec3 projCoords = fragPosLightSpace.xyz/w;
+
+    projCoords = projCoords * 0.5 + 0.5;
+    
+    if(currentDepth > 1.0)
+    {
+        return 0.0;
+    }
+
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    const float biasModifier = 0.5f;
+
+    if(layer == cascadeCount)
+    {
+        bias *= 1/(farPlane * biasModifier);
+    }
+    else
+    {
+        bias *= 1/(cacadePlantDistances[layer] * biasModifier)
+    }
+
+    float shadow = 0.0f;
+    
+    vec2 texelSize = 1.0/vec2(textureSize(shadowMap,0));
+
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadowMap, vec3(projCoords.xy + vec2(x,y)  * texelSize, layer)).r;
+            shadow += (currentDepth - bias) > pcfDepth ? 1.0 : 0.0;
+        }        
+    }
+    shadow /= 9.0f;
+    
+    return shadow;
 }

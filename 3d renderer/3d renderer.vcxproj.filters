@@ -202,6 +202,17 @@
     <None Include="Shaders\light_bloom.fs">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\Deffered.fs" />
+    <None Include="Shaders\Deffered.vs" />
+    <None Include="Shaders\cascade_depth.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cascade_depth.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cascade_depth.gs">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\imgui.natvis">
