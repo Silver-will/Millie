@@ -10,6 +10,7 @@
 #include"VAO.h"
 #include"Shadow.h"
 #include"Buffers.h"
+using Camera_values::cam;
 
 GLuint loadCubeMapTexture(string directory);
 //void drawPointShadow(PointLight& light, Shader& s, GLuint& tex);
@@ -27,7 +28,6 @@ void UpdateHDR(Shader& shad);
 
 const int WIDTH = 1440;
 const int HEIGHT = 800;
-Camera cam;
 glm::mat4 projection = glm::mat4(1.0f);
 int main()
 {
@@ -193,7 +193,7 @@ int main()
 		Input(window);
 		modelShader.use();
 		UpdatePhong(modelShader);
-		projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(cam.zoom), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 		setUboValue(projection, ubo, 0);
 		view = cam.getView();
 		setUboValue(view, ubo, 1);
@@ -205,7 +205,7 @@ int main()
 		glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
 		modelShader.SetMatrix4("model", model);
 		modelShader.SetMatrix3("normalMatrix", Normalmat);
-
+		
 		Cyborg.Draw(modelShader);
 		for (auto& x : Light_values::points)
 		{
@@ -229,11 +229,6 @@ int main()
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
 		screenBuff.unbind();
-
-		//glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[0]);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//Cyborg.Draw(modelShader);
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		//second render pass to apply a gaussian blur
 

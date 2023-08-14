@@ -184,11 +184,16 @@
     <None Include="Shaders\bloom_blur.vs" />
     <None Include="Shaders\b_phong_no_spec.fs" />
     <None Include="Shaders\b_phong_no_spec.vs" />
+    <None Include="Shaders\cascade_depth.fs" />
+    <None Include="Shaders\cascade_depth.gs" />
+    <None Include="Shaders\cascade_depth.vs" />
     <None Include="Shaders\cubeDepth.fs" />
     <None Include="Shaders\cubeDepth.gs" />
     <None Include="Shaders\cubeDepth.vs" />
     <None Include="Shaders\cubeMap.fs" />
     <None Include="Shaders\cubeMap.vs" />
+    <None Include="Shaders\Deffered.fs" />
+    <None Include="Shaders\Deffered.vs" />
     <None Include="Shaders\light_bloom.fs" />
     <None Include="Shaders\none.fs" />
     <None Include="Shaders\none.vs" />

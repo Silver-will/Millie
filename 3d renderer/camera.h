@@ -13,6 +13,7 @@ struct Camera
 	glm::vec3 getPos();
 	glm::vec3 getTarget();
 	glm::vec3 getDir();
+	GLfloat zoom;
 
 private:
 	glm::vec3 upValue;
@@ -25,6 +26,7 @@ namespace Camera_values {
 	extern GLfloat deltaTime;
 	extern GLfloat lastFrame;
 	extern GLfloat currentFrame;
+	extern Camera cam;
 }
 
 #endif

@@ -5,7 +5,7 @@ namespace Camera_values {
 	GLfloat deltaTime{};
 	GLfloat lastFrame{};
 	GLfloat currentFrame{};
-
+	Camera cam;
 }
 Camera::Camera()
 {
@@ -14,6 +14,7 @@ Camera::Camera()
 	cameraTarget =vec3(0.0f, 0.0f, -1.0f);
 	Right = normalize(cross(cameraTarget, upValue));
 	view = glm::lookAt(cameraPos, cameraTarget, upValue);
+	zoom = 45.0f;
 }
 
 void Camera::processInput(GLFWwindow* window)
