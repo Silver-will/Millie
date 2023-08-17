@@ -1,4 +1,5 @@
 #include"UI.h"
+#include"Shadow.h"
 #include"Lights.h"
 #include<vector>
 #include<nfd/include/nfd.h>
@@ -195,6 +196,8 @@ void SetupUI(bool* p_open)
             static std::vector<GLfloat> spec{1.0f,1.0f,1.0f};
             ImGui::InputFloat3("R,G,B spec", spec.data());
             direct.specular = vec3(spec.at(0), spec.at(1), spec.at(2));
+            ImGui::Spacing();
+            ImGui::Checkbox("Display shadow", &Shadow_values::shadow);
             ImGui::TreePop();
             ImGui::Spacing();
         }

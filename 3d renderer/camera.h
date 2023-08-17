@@ -27,6 +27,8 @@ namespace Camera_values {
 	extern GLfloat lastFrame;
 	extern GLfloat currentFrame;
 	extern Camera cam;
+	extern GLfloat cameraNearPlane;
+	extern GLfloat cameraFarPlane;
 }
 
 #endif

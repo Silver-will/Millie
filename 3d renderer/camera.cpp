@@ -6,6 +6,8 @@ namespace Camera_values {
 	GLfloat lastFrame{};
 	GLfloat currentFrame{};
 	Camera cam;
+	GLfloat cameraNearPlane{ 0.1f };
+	GLfloat cameraFarPlane{ 500.0f };
 }
 Camera::Camera()
 {

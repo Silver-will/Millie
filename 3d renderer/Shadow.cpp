@@ -14,8 +14,7 @@ std::vector<glm::vec4> getFrustrumCornersWorldSpace(const glm::mat4& projView)
 		{
 			for (size_t z = 0; z < 2; z++)
 			{
-				const glm::vec4 pt = inv * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f,
-					2.0f * z - 1.0f, 1.0f);
+				const glm::vec4 pt = inv * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f, 1.0f);
 				frustumCorners.push_back(pt / pt.w);
 			}
 		}
@@ -26,11 +25,11 @@ std::vector<glm::vec4> getFrustrumCornersWorldSpace(const glm::mat4& projView)
 std::vector<glm::mat4> getLightSpaceMatrices()
 {
 	std::vector<glm::mat4> ret;
-	for (size_t i = 0; i < shadowCascadeLevels.size(); ++i)
+	for (size_t i = 0; i < shadowCascadeLevels.size() + 1; ++i)
 	{
 		if (i == 0)
 		{
-			ret.push_back(getLightSpaceMatrix(0.1, shadowCascadeLevels[i]));
+			ret.push_back(getLightSpaceMatrix(Camera_values::cameraNearPlane, shadowCascadeLevels[i]));
 		}
 		else if (i < shadowCascadeLevels.size())
 		{
@@ -38,7 +37,7 @@ std::vector<glm::mat4> getLightSpaceMatrices()
 		}
 		else
 		{
-			ret.push_back(getLightSpaceMatrix(shadowCascadeLevels[i - 1], 500.0f));
+			ret.push_back(getLightSpaceMatrix(shadowCascadeLevels[i - 1], Camera_values::cameraFarPlane));
 		}
 	}
 	return ret;
@@ -67,7 +66,6 @@ glm::mat4 getLightSpaceMatrix(const GLfloat nearPlane, const GLfloat farPlane)
 	GLfloat maxY = std::numeric_limits<float>::lowest();
 	GLfloat minZ = std::numeric_limits<float>::max();
 	GLfloat maxZ = std::numeric_limits<float>::lowest();
-
 	for (const auto& v : corners)
 	{
 		const auto trf = lightView * v;
@@ -135,4 +133,5 @@ void generateLightFBOAndTex(GLuint& lightFBO, GLuint& lightFBOTex)
 
 namespace Shadow_values {
 	std::vector<GLfloat> shadowCascadeLevels{500.0f/50.0f, 500.0f/25.0f, 500.0f/10.0f, 500.0f/2.0f};
+	bool shadow{ true };
 }

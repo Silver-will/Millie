@@ -79,18 +79,19 @@ void FrameBuffer::attachColorTex()
 	}
 }
 
-GLuint generateUBO() {
+GLuint generateUBO(GLuint size, GLuint binding) {
 	GLuint uboMatrices;
 	glGenBuffers(1, &uboMatrices);
 	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_STATIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding, uboMatrices);
 	return uboMatrices;
 }
 
 void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off)
 {
+	std::cout << off << std::endl;
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 	glBufferSubData(GL_UNIFORM_BUFFER, off * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(matrice));
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
