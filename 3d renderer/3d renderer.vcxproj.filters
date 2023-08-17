@@ -21,9 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AABB.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -89,9 +86,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AABB.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -166,15 +160,6 @@
     <None Include="Shaders\cubeMap.vs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\cubeDepth.vs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\cubeDepth.fs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\cubeDepth.gs">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\b_phong_no_spec.fs">
       <Filter>Shaders</Filter>
     </None>
@@ -211,6 +196,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\cascade_depth.gs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\debugMap.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\debugMap.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

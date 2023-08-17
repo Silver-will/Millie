@@ -1,12 +1,12 @@
-#version 450 core
+#version 460 core
 
 layout(triangles, invocations = 5)in;
 layout(triangle_strip, max_vertices = 3) out;
 
-layout(std140, binding = 1) uniform LightMatrices
+layout(std140, binding = 1) uniform LightMatrix
 {
-	mat4 LightMatrices[16];
-}
+    mat4 lightMatrices[8];
+};
 
 void main()
 {

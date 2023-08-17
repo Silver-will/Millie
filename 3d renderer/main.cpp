@@ -25,6 +25,7 @@ void ProcessOffset(GLfloat xpos, GLfloat ypos);
 void Input(GLFWwindow* window);
 void UpdatePhong(Shader& shad);
 void UpdateHDR(Shader& shad);
+void UpdateShadowValues(Shader& shad);
 
 const int WIDTH = 1440;
 const int HEIGHT = 800;
@@ -33,7 +34,7 @@ int main()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Millie", NULL, NULL);
@@ -65,13 +66,14 @@ int main()
 	
 	//stbi_set_flip_vertically_on_load(true);
 
+	Shader cascadeShader("./Shaders/cascade_depth.vs", "./Shaders/cascade_depth.fs", "./Shaders/cascade_depth.gs");
 	Shader modelShader("./Shaders/blinn-phong.vs", "./Shaders/blinn-phong.fs");
 	//Shader sceneShader("./Shaders/b_phong_no_spec.vs", "./Shaders/b_phong_no_spec.fs");
 	Shader skyboxShader("./Shaders/cubeMap.vs", "./Shaders/cubeMap.fs");
-	//Shader DepthMapShader("./Shaders/cubeDepth.vs", "./Shaders/cubeDepth.fs", "./Shaders/cubeDepth.gs");
 	Shader lightShader("./Shaders/none.vs", "./Shaders/light_bloom.fs");
 	Shader quadShader("./Shaders/Quad.vs", "./Shaders/Quad.fs");
 	Shader blurShader("./Shaders/bloom_blur.vs", "./Shaders/bloom_blur.fs");
+	Shader debugShader("./Shaders/debugMap.vs", "./Shaders/debugMap.fs");
 	Model Cyborg("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
 	std::vector<GLfloat> skyBox{
 		-1.0f,  1.0f, -1.0f,
@@ -132,15 +134,8 @@ int main()
 	screenBuff.checkComplete();
 	screenBuff.unbind();
 
-	//Ping-pong FrameBuffers
-	/*std::vector<FrameBuffer> PingPongBuffers{FrameBuffer(1), FrameBuffer(1)};
-	for (size_t i = 0; i < PingPongBuffers.size(); i++)
-	{
-		PingPongBuffers[i].attachColorTex();
-		PingPongBuffers[i].checkComplete();
-		PingPongBuffers[i].unbind();
-	}
-	*/
+	GLuint lightFBO, lightFBOTex;
+	generateLightFBOAndTex(lightFBO, lightFBOTex);
 
 	unsigned int pingpongFBO[2];
 	unsigned int pingpongColorbuffers[2];
@@ -170,9 +165,13 @@ int main()
 	quadShader.use();
 	quadShader.SetInteger("colorTex", 0);
 	quadShader.SetInteger("bloomBlur", 1);
+	
+	modelShader.use();
+	modelShader.SetInteger("shadowMap", 3);
 	setLight();
 	
-	GLuint ubo = generateUBO();
+	GLuint ubo = generateUBO(2 * sizeof(glm::mat4), 0);
+	GLuint lightUbO = generateUBO(8 * sizeof(glm::mat4), 1);
 	glm::mat4 view(1.0f);
 	GLint width{}, height{};
 	while (!glfwWindowShouldClose(window))
@@ -182,12 +181,46 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		auto lightMatrices = getLightSpaceMatrices();
+		for (size_t i = 0; i < lightMatrices.size(); i++)
+		{
+			setUboValue(lightMatrices[i], lightUbO, i);
+		}
 		glfwGetWindowSize(window, &width, &height);
+
+		glm::mat4 model(1.0f);
+		
+
+		//Render scene from light sources perspective to depth map
+		cascadeShader.use();
+		glBindFramebuffer(GL_FRAMEBUFFER, lightFBO);
+		glViewport(0, 0, 4096, 4096);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glCullFace(GL_FRONT);
+		
+		model = glm::translate(model, glm::vec3(0.0, -3.0, -8.0));
+		model = glm::rotate(model,glm::radians(90.0f), glm::vec3(1.0f,0.0f,0.0f));
+		model = glm::scale(model, glm::vec3(5.0f));
+		cascadeShader.SetMatrix4("model", model);
+		Cyborg.Draw(cascadeShader);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0, -1.5, 0.0f));
+		model = glm::scale(model, glm::vec3(0.5f));
+		cascadeShader.SetMatrix4("model", model);
+		Cyborg.Draw(cascadeShader);
+		glCullFace(GL_BACK);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
 		//First renderpass to offscreen framebuffer
+
 		screenBuff.bind();
 		glViewport(0, 0, WIDTH, HEIGHT);
-		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 		Input(window);
@@ -197,15 +230,29 @@ int main()
 		setUboValue(projection, ubo, 0);
 		view = cam.getView();
 		setUboValue(view, ubo, 1);
+		UpdateShadowValues(modelShader);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0, -3.0, -8.0));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(5.0f));
+		modelShader.SetMatrix4("model", model);
+		glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
+		modelShader.SetMatrix3("normalMatrix", Normalmat);
+
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, lightFBOTex);
+		Cyborg.Draw(modelShader);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0, -1.5, 2.0f));
+		model = glm::scale(model, glm::vec3(0.5f));
 		modelShader.SetVector3f("viewPos", cam.getPos());
 		modelShader.SetVector3f("material.specular", glm::vec3(0.5f));
-		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(0.0, -1.5, 0.0f));
-		model = glm::scale(model, glm::vec3(0.5f));
-		glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
+	    Normalmat = glm::transpose(glm::inverse(model));
 		modelShader.SetMatrix4("model", model);
 		modelShader.SetMatrix3("normalMatrix", Normalmat);
-		
+
 		Cyborg.Draw(modelShader);
 		for (auto& x : Light_values::points)
 		{
@@ -261,12 +308,19 @@ int main()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		quadShader.use();
+		debugShader.use();
+		debugShader.SetInteger("layer", 0);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, lightFBOTex);
+
+		/*quadShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		screenBuff.bindTex(0);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
 		UpdateHDR(quadShader);
+		*/
 		drawQuad();
 		
 		SetupUI(&showWindow);
@@ -592,3 +646,13 @@ void drawQuad()
 	debugvao.unbind();
 }
 
+void UpdateShadowValues(Shader& shad)
+{
+	shad.SetFloat("far_plane", Camera_values::cameraFarPlane);
+	auto& cascades = Shadow_values::shadowCascadeLevels;
+	shad.SetInteger("cascadeCount", cascades.size());
+	for (size_t i = 0; i < cascades.size(); i++)
+	{
+		shad.SetFloat("cascadePlaneDistances[" + std::to_string(i) + "]", cascades[i]);
+	}
+}

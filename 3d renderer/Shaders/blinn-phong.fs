@@ -60,8 +60,8 @@ struct SpotLight
 #define MAX_SPOT_LIGHT 50
 
 uniform PointLight points[MAX_POINT_LIGHT];
-uniform DirectLight direct;
 uniform SpotLight spots[MAX_SPOT_LIGHT];
+uniform DirectLight direct;
 uniform Material material;
 uniform int point_count;
 uniform int spot_count;
@@ -70,18 +70,18 @@ uniform bool shadow;
 
 uniform sampler2DArray shadowMap;
 uniform float far_plane;
-uniform float cascadePlaneDistances[16];
+uniform float cascadePlaneDistances[8];
 uniform int cascadeCount;
 
-float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal);
+float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal, vec3 lightDir);
 vec3 CalculatePoints(PointLight light, vec3 normal,vec3 fragpos, vec3 viewDir);
 vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir);
 
-layout(std140, binding = 1) uniform LightMatrices
+layout(std140, binding = 1) uniform LightMatrix
 {
-	mat4 LightMatrices[16];
-}
+    mat4 lightMatrices[8];
+};
 
 void main()
 {
@@ -91,16 +91,15 @@ void main()
 
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 Output = CalculateDir(direct, norm, viewDir);
-    for(int i = 0; i < point_count; i++)
-    {
-      Output += CalculatePoints(points[i], norm, fs_in.FragPos, viewDir);
-    }
-    for(int i = 0; i < spot_count; i++)
-    {
-      Output += CalculateSpots(spots[i], norm, fs_in.FragPos, viewDir);
-    }
+    //for(int i = 0; i < point_count; i++)
+    //{
+      //Output += CalculatePoints(points[i], norm, fs_in.FragPos, viewDir);
+    //}
+    //for(int i = 0; i < spot_count; i++)
+    //{
+      //Output += CalculateSpots(spots[i], norm, fs_in.FragPos, viewDir);
+    //}
 
-   
     FragColor = vec4(Output, 1.0f);
 }
 
@@ -142,7 +141,7 @@ vec3 CalculateDir(DirectLight light, vec3 normal, vec3 viewDir)
     vec3 diffuse = light.diffuse * diff * vec3(texture(material.texture_diffuse1, fs_in.Tex)).rgb;
     vec3 specular = light.specular * spec * vec3(texture(material.texture_specular1, fs_in.Tex)).rgb;
 
-    float shadowVal = shadow ? ShadowCalculation(fs_in.FragPos, normal) : 0.0f;
+    float shadowVal = shadow ? ShadowCalculation(fs_in.FragPos, normal, lightDir) : 0.0f;
    
 
     return (ambient + (1.0 - shadowVal) * (diffuse + specular));
@@ -175,7 +174,7 @@ vec3 CalculateSpots(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     return (ambient + diffuse + specular);
 }
 
-float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal)
+float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal, vec3 lightDir)
 {
     vec4 fragPosViewSpace = fs_in.viewOut * vec4(fragPosWorldSpace,1.0f);
 
@@ -184,7 +183,7 @@ float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal)
     int layer = -1;
     for(int i = 0; i < cascadeCount; i++)
     {
-        if(depthValue < cascadePlaneDistance[i])
+        if(depthValue < cascadePlaneDistances[i])
         {
             layer = i;
             break;
@@ -195,11 +194,13 @@ float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal)
         layer = cascadeCount;
     }
 
-    vec4 fragPosLightSpace = lightSpaceMatrix[layer] * vec4(fragPosWorldSpace, 1.0f);
+    vec4 fragPosLightSpace = lightMatrices[layer] * vec4(fragPosWorldSpace, 1.0f);
 
-    vec3 projCoords = fragPosLightSpace.xyz/w;
+    vec3 projCoords = fragPosLightSpace.xyz/fragPosLightSpace.w;
 
     projCoords = projCoords * 0.5 + 0.5;
+
+    float currentDepth = projCoords.z;
     
     if(currentDepth > 1.0)
     {
@@ -211,11 +212,11 @@ float ShadowCalculation(vec3 fragPosWorldSpace, vec3 normal)
 
     if(layer == cascadeCount)
     {
-        bias *= 1/(farPlane * biasModifier);
+        bias *= 1/(far_plane * biasModifier);
     }
     else
     {
-        bias *= 1/(cacadePlantDistances[layer] * biasModifier)
+        bias *= 1/(cascadePlaneDistances[layer] * biasModifier);
     }
 
     float shadow = 0.0f;

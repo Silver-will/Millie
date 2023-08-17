@@ -5,7 +5,7 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<vector>
-GLuint generateUBO();
+GLuint generateUBO(GLuint size, GLuint binding);
 void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off);
 
 struct FrameBuffer
