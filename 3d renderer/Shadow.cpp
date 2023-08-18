@@ -47,7 +47,7 @@ glm::mat4 getLightSpaceMatrix(const GLfloat nearPlane, const GLfloat farPlane)
 {
 	const auto proj = glm::perspective(glm::radians(cam.zoom),
 		1440.0f/800.0f, nearPlane, farPlane);
-	const auto corners = getFrustrumCornersWorldSpace(cam.getView() * proj);
+	const auto corners = getFrustrumCornersWorldSpace(proj * cam.getView());
 
 	glm::vec3 center(0.0f);
 
@@ -114,7 +114,7 @@ void generateLightFBOAndTex(GLuint& lightFBO, GLuint& lightFBOTex)
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-	const GLfloat borderColor[] = {1.0f, 1.0f,1.0f,1.0f};
+	constexpr GLfloat borderColor[] = {1.0f, 1.0f,1.0f,1.0f};
 	glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, lightFBO);

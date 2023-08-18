@@ -177,7 +177,7 @@ void SetupUI(bool* p_open)
         }
         if (ImGui::TreeNode("Direct Light"))
         {
-            static GLfloat pos[3] = { 0.0f, -1.0f, -0.5f };
+            static GLfloat pos[3] = { direct.direction.x, direct.direction.y, direct.direction.z };
             ImGui::InputFloat3("x,y,z", pos);
             direct.direction = vec3(pos[0], pos[1], pos[2]);
             ImGui::SeparatorText("ambient");

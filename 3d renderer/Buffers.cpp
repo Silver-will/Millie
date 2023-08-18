@@ -19,7 +19,6 @@ FrameBuffer::FrameBuffer(GLuint ColorAttachNo, bool NR) :textureWidth{ 1440 }, t
 ColorTexNo{ ColorAttachNo }
 {
 	this->attachments.resize(ColorAttachNo);
-	std::cout << attachments.size() << std::endl;
 	//Framebuffer set up
 	glGenFramebuffers(1, &this->FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->FBO);
@@ -91,9 +90,8 @@ GLuint generateUBO(GLuint size, GLuint binding) {
 
 void setUboValue(glm::mat4& matrice, GLuint& ubo, GLint off)
 {
-	std::cout << off << std::endl;
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	glBufferSubData(GL_UNIFORM_BUFFER, off * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(matrice));
+	glBufferSubData(GL_UNIFORM_BUFFER, off * sizeof(glm::mat4), sizeof(glm::mat4), &matrice[0][0]);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
