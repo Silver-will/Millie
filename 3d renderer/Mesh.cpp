@@ -1,7 +1,7 @@
 #include "Mesh.h"
 #include<iostream>
 
-Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 {
     this->vertices = vertices;
     this->indices = indices;
@@ -16,6 +16,7 @@ void Mesh::Draw(Shader& shader)
     GLuint specularNr = 1;
     GLuint normalNr = 1;
     GLuint heightNr = 1;
+    texture_binds = 0;
     for (size_t i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i);
@@ -30,10 +31,17 @@ void Mesh::Draw(Shader& shader)
         else if (name == "texture_height")
             number = std::to_string(heightNr++);
         name = "material." + name + number;
+        
         const char* fs = name.c_str();
         glUniform1i(glGetUniformLocation(shader.shad, fs), i);
-
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
+        texture_binds++;
+        if (i == (textures.size() - 1))
+        {   
+            glActiveTexture(GL_TEXTURE3);
+            shader.SetInteger("shadowMap", texture_binds);
+            glBindTexture(GL_TEXTURE_2D_ARRAY, Glob::lightFBOTex);
+        }
     }
     // draw mesh
     glBindVertexArray(VAO);

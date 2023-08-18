@@ -11,7 +11,8 @@
 #include"Shadow.h"
 #include"Buffers.h"
 using Camera_values::cam;
-
+bool debug = false;
+using namespace Glob;
 GLuint loadCubeMapTexture(string directory);
 //void drawPointShadow(PointLight& light, Shader& s, GLuint& tex);
 void drawLightPos();
@@ -134,7 +135,6 @@ int main()
 	screenBuff.checkComplete();
 	screenBuff.unbind();
 
-	GLuint lightFBO, lightFBOTex;
 	generateLightFBOAndTex(lightFBO, lightFBOTex);
 
 	unsigned int pingpongFBO[2];
@@ -165,13 +165,10 @@ int main()
 	quadShader.use();
 	quadShader.SetInteger("colorTex", 0);
 	quadShader.SetInteger("bloomBlur", 1);
-	
-	modelShader.use();
-	modelShader.SetInteger("shadowMap", 3);
 	setLight();
 	
 	GLuint ubo = generateUBO(2 * sizeof(glm::mat4), 0);
-	GLuint lightUbO = generateUBO(8 * sizeof(glm::mat4), 1);
+	GLuint lightUbo = generateUBO(8 * sizeof(glm::mat4), 1);
 	glm::mat4 view(1.0f);
 	GLint width{}, height{};
 	while (!glfwWindowShouldClose(window))
@@ -187,11 +184,12 @@ int main()
 		auto lightMatrices = getLightSpaceMatrices();
 		for (size_t i = 0; i < lightMatrices.size(); i++)
 		{
-			setUboValue(lightMatrices[i], lightUbO, i);
+			setUboValue(lightMatrices[i], lightUbo, i);
 		}
+		
 		glfwGetWindowSize(window, &width, &height);
 
-		glm::mat4 model(1.0f);
+		glm::mat4 model = glm::mat4(1.0f);
 		
 
 		//Render scene from light sources perspective to depth map
@@ -201,17 +199,19 @@ int main()
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glCullFace(GL_FRONT);
 		
-		model = glm::translate(model, glm::vec3(0.0, -3.0, -8.0));
+		model = glm::translate(model, glm::vec3(0.0f, -3.0f, -8.0f));
 		model = glm::rotate(model,glm::radians(90.0f), glm::vec3(1.0f,0.0f,0.0f));
 		model = glm::scale(model, glm::vec3(5.0f));
 		cascadeShader.SetMatrix4("model", model);
 		Cyborg.Draw(cascadeShader);
 
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0, -1.5, 0.0f));
+		model = glm::translate(model, glm::vec3(15.0f, 3.0f, 20.0f));
 		model = glm::scale(model, glm::vec3(0.5f));
 		cascadeShader.SetMatrix4("model", model);
 		Cyborg.Draw(cascadeShader);
+
+
 		glCullFace(GL_BACK);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		
@@ -238,23 +238,20 @@ int main()
 		model = glm::scale(model, glm::vec3(5.0f));
 		modelShader.SetMatrix4("model", model);
 		glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
+		modelShader.SetVector3f("viewPos", cam.getPos());
 		modelShader.SetMatrix3("normalMatrix", Normalmat);
-
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D_ARRAY, lightFBOTex);
 		Cyborg.Draw(modelShader);
 
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0, -1.5, 2.0f));
+		model = glm::translate(model, glm::vec3(15.0f, 3.0f, 20.0f));
 		model = glm::scale(model, glm::vec3(0.5f));
 		modelShader.SetVector3f("viewPos", cam.getPos());
-		modelShader.SetVector3f("material.specular", glm::vec3(0.5f));
 	    Normalmat = glm::transpose(glm::inverse(model));
 		modelShader.SetMatrix4("model", model);
 		modelShader.SetMatrix3("normalMatrix", Normalmat);
 
 		Cyborg.Draw(modelShader);
-		for (auto& x : Light_values::points)
+		/*for (auto& x : Light_values::points)
 		{
 			lightShader.use();
 			glm::mat4 lightModel(1.0f);
@@ -264,7 +261,9 @@ int main()
 			lightShader.SetVector3f("lightColor", x.diffuse);
 			drawLightPos();
 		}
-		//change depth test to less than or equal to avoid skybox fragments being disgarded
+		*/
+
+		//change depth test to less or equal to avoid skybox fragments being disgarded
 		glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
 		view = glm::mat4(glm::mat3(cam.getView()));
@@ -308,21 +307,27 @@ int main()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		debugShader.use();
-		debugShader.SetInteger("layer", 0);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D_ARRAY, lightFBOTex);
-
-		/*quadShader.use();
+		
+		quadShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		screenBuff.bindTex(0);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
 		UpdateHDR(quadShader);
-		*/
 		drawQuad();
-		
+		if (debug)
+		{
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			debugShader.use();
+			debugShader.SetInteger("layer", 0);
+			debugShader.SetFloat("near_plane", 0.1f);
+			debugShader.SetFloat("far_plane", 500.0f);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, lightFBOTex);
+			drawQuad();
+			
+		}
 		SetupUI(&showWindow);
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -401,6 +406,16 @@ void Input(GLFWwindow* window)
 		glfwSetCursorPosCallback(window, NULL);
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
+	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+	{
+		debug = true;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
+	{
+		debug = false;
+	}
+
 	cam.processInput(window);
 }
 
@@ -651,6 +666,7 @@ void UpdateShadowValues(Shader& shad)
 	shad.SetFloat("far_plane", Camera_values::cameraFarPlane);
 	auto& cascades = Shadow_values::shadowCascadeLevels;
 	shad.SetInteger("cascadeCount", cascades.size());
+	shad.SetInteger("shadow", Shadow_values::shadow);
 	for (size_t i = 0; i < cascades.size(); i++)
 	{
 		shad.SetFloat("cascadePlaneDistances[" + std::to_string(i) + "]", cascades[i]);

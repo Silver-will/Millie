@@ -10,7 +10,7 @@
 
 #include <string>
 #include <vector>
-using namespace std;
+
 
 struct Vertex {
     glm::vec3 Position;
@@ -28,12 +28,13 @@ struct Texture {
 
 struct Mesh {
     // mesh Data
-    vector<Vertex>       vertices;
-    vector<GLuint> indices;
-    vector<Texture>      textures;
+    std::vector<Vertex>       vertices;
+    std::vector<GLuint> indices;
+    std::vector<Texture>      textures;
     GLuint VAO;
+    GLint texture_binds;
 
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures);
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
     void Draw(Shader& shader);
 
 private:

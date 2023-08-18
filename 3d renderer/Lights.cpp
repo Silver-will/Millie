@@ -138,7 +138,7 @@ void setLight()
 
 namespace Light_values
 {
-	DirLight direct(vec3(0.2f), vec3(0.5f), vec3(1.0f), vec3(0.0f, -8.0f, 4.0f));
+	DirLight direct(vec3(0.2f), vec3(0.5f), vec3(1.0f), glm::normalize(vec3(10.0f,5.0f, 10.0f)));
 	std::vector<SpotLight> spots{};
 	std::vector<PointLight> points{};
 	GLfloat shine{ 128.0f};

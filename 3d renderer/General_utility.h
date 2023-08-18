@@ -15,12 +15,11 @@ using mat4 = glm::mat4;
 void Log(const string message, const std::source_location loc = std::source_location::current());
 enum class active_shading_model { none = 0, blinnPhong, PBR };
 namespace Glob{
-	extern const int WIDTH;
-	extern const int HEIGHT;
 	extern GLfloat sensitivity;
 	extern GLfloat lastX, lastY, xOffset, yOffset;
 	extern bool fMouse;
 	extern active_shading_model active;
+	extern GLuint lightFBO, lightFBOTex;
 }
 
 

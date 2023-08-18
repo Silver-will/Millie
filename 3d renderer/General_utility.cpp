@@ -8,6 +8,7 @@ namespace Glob
 	bool fMouse = true;
 	GLfloat lastX{}, lastY{}, xOffset{}, yOffset{};
 	active_shading_model active{active_shading_model::none};
+	GLuint lightFBO{}, lightFBOTex{};
 }
 void Log(const string message, const std::source_location loc)
 {
