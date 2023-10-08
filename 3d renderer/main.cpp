@@ -1,6 +1,7 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<iostream>
+#include<chrono>
 
 #include"UI.h"
 #include"General_utility.h"
@@ -12,9 +13,9 @@
 #include"Buffers.h"
 using Camera_values::cam;
 bool debug = false;
+bool rotate_camera = false;
 using namespace Glob;
 GLuint loadCubeMapTexture(string directory);
-//void drawPointShadow(PointLight& light, Shader& s, GLuint& tex);
 void drawLightPos();
 void drawQuad();
 void drawPlane(GLuint& Tex, Shader& s);
@@ -22,7 +23,9 @@ void drawCubes(GLuint& Tex, Shader& s);
 
 void FramebufferCallback(GLFWwindow* window, GLint width, GLint height);
 void MouseCallback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void ProcessOffset(GLfloat xpos, GLfloat ypos);
+void HandleCameraRotation(GLFWwindow* window);
 void Input(GLFWwindow* window);
 void UpdatePhong(Shader& shad);
 void UpdateHDR(Shader& shad);
@@ -56,6 +59,7 @@ int main()
 	bool showWindow = true;
 
 	glfwSetFramebufferSizeCallback(window, FramebufferCallback);
+	//glfwSetMouseButtonCallback(window, MouseButtonCallback);
 		
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -75,7 +79,7 @@ int main()
 	Shader quadShader("./Shaders/Quad.vs", "./Shaders/Quad.fs");
 	Shader blurShader("./Shaders/bloom_blur.vs", "./Shaders/bloom_blur.fs");
 	Shader debugShader("./Shaders/debugMap.vs", "./Shaders/debugMap.fs");
-	Model Cyborg("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\cyborg\\cyborg.obj");
+	Model Room("C:\\Users\\katsura\\source\\repos\\3d renderer\\3d renderer\\resources\\Japanese room\\Room.obj");
 	std::vector<GLfloat> skyBox{
 		-1.0f,  1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,
@@ -199,18 +203,10 @@ int main()
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glCullFace(GL_FRONT);
 		
-		model = glm::translate(model, glm::vec3(0.0f, -3.0f, -8.0f));
-		model = glm::rotate(model,glm::radians(90.0f), glm::vec3(1.0f,0.0f,0.0f));
-		model = glm::scale(model, glm::vec3(5.0f));
-		cascadeShader.SetMatrix4("model", model);
-		Cyborg.Draw(cascadeShader);
-
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(15.0f, 3.0f, 20.0f));
-		model = glm::scale(model, glm::vec3(0.5f));
+		model = glm::translate(model, glm::vec3(0.0f, -3.0f,1.5));
 		cascadeShader.SetMatrix4("model", model);
-		Cyborg.Draw(cascadeShader);
-
+		Room.Draw(cascadeShader);
 
 		glCullFace(GL_BACK);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -233,35 +229,23 @@ int main()
 		UpdateShadowValues(modelShader);
 
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0, -3.0, -8.0));
-		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(5.0f));
-		modelShader.SetMatrix4("model", model);
+		model = glm::translate(model, glm::vec3(0.0, -3.0, 1.5));
+		modelShader.SetVector3f("viewPos", cam.getPos());
 		glm::mat3 Normalmat = glm::transpose(glm::inverse(model));
-		modelShader.SetVector3f("viewPos", cam.getPos());
-		modelShader.SetMatrix3("normalMatrix", Normalmat);
-		Cyborg.Draw(modelShader);
-
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(15.0f, 3.0f, 20.0f));
-		model = glm::scale(model, glm::vec3(0.5f));
-		modelShader.SetVector3f("viewPos", cam.getPos());
-	    Normalmat = glm::transpose(glm::inverse(model));
 		modelShader.SetMatrix4("model", model);
 		modelShader.SetMatrix3("normalMatrix", Normalmat);
 
-		Cyborg.Draw(modelShader);
-		/*for (auto& x : Light_values::points)
+		Room.Draw(modelShader);
+		for (auto& x : Light_values::points)
 		{
 			lightShader.use();
 			glm::mat4 lightModel(1.0f);
 			lightModel = glm::translate(lightModel, x.position);
-			lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+			lightModel = glm::scale(lightModel, glm::vec3(0.1f));
 			lightShader.SetMatrix4("model", lightModel);
 			lightShader.SetVector3f("lightColor", x.diffuse);
 			drawLightPos();
 		}
-		*/
 
 		//change depth test to less or equal to avoid skybox fragments being disgarded
 		glDepthFunc(GL_LEQUAL);
@@ -391,21 +375,38 @@ void ProcessOffset(GLfloat xpos, GLfloat ypos)
 	cam.setTarget(glm::normalize(direction));
 }
 
+void HandleCameraRotation(GLFWwindow* window)
+{
+	if (rotate_camera == true)
+	{
+		glfwSetCursorPosCallback(window, MouseCallback);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+	else
+	{
+		glfwSetCursorPosCallback(window, ImGui_ImplGlfw_CursorPosCallback);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+	static auto start{ std::chrono::steady_clock::now() };
+	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+	if (state == GLFW_PRESS)
+	{
+		const auto end{ std::chrono::steady_clock::now() };
+		const std::chrono::duration<double> time_since_last_click{ end - start };
+		Glob::fMouse = true;
+		if (time_since_last_click > 0.15s)
+		{
+			std::cout << "r\n";
+			rotate_camera = !rotate_camera;
+			start = std::chrono::steady_clock::now();
+		}
+	}
+}
+
 void Input(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS)
-	{
-		glfwSetCursorPosCallback(window, MouseCallback);
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		
-	}
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-	{
-		glfwSetCursorPosCallback(window, NULL);
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-	}
 	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
 	{
 		debug = true;
@@ -415,7 +416,7 @@ void Input(GLFWwindow* window)
 	{
 		debug = false;
 	}
-
+	HandleCameraRotation(window);
 	cam.processInput(window);
 }
 
@@ -670,5 +671,14 @@ void UpdateShadowValues(Shader& shad)
 	for (size_t i = 0; i < cascades.size(); i++)
 	{
 		shad.SetFloat("cascadePlaneDistances[" + std::to_string(i) + "]", cascades[i]);
+	}
+}
+
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
+	{
+		std::cout << "r\n";
+		rotate_camera = !rotate_camera;
 	}
 }
